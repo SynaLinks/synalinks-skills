@@ -1,6 +1,0 @@
-EmployeeID,FirstName,LastName,Position,HireDate,Salary,Bonus,TotalCompensation
-1,John,Doe,Software Engineer,2021-01-01,80000.00,5000.00,85000.00
-2,Jane,Smith,Product Manager,2020-06-01,90000.00,10000.00,100000.00
-3,Michael,Johnson,Data Analyst,2021-03-15,70000.00,2000.00,72000.00
-4,Emily,Davis,Marketing Manager,2019-09-01,100000.00,15000.00,115000.00
-5,Robert,Brown,Sales Representative,2021-11-15,60000.00,0.00,60000.00
