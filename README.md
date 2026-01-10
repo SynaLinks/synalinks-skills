@@ -27,6 +27,15 @@ git clone https://github.com/SynaLinks/synalinks-skills.git
 cd synalinks-skills
 ```
 
+### Install with `sk`
+
+Install via [sk](https://github.com/803/skills-supply), the universal skills package manager for coding agents (supports Claude, Codex, OpenCode, etc...).
+
+```bash
+sk pkg add github SynaLinks/synalinks-skills
+sk sync
+```
+
 ## Using Skills in Claude
 
 Click the skill icon (🧩) in your chat interface.
