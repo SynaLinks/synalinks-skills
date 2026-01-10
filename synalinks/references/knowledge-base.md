@@ -2,186 +2,175 @@
 
 ## Overview
 
-Synalinks provides native support for hybrid graph + vector databases, enabling Retrieval-Augmented Generation (RAG) and Knowledge-Augmented Generation (KAG) workflows.
+Synalinks provides a unified knowledge base system using DuckDB for storing and retrieving structured data. It supports full-text search (BM25) and vector similarity search for building RAG (Retrieval-Augmented Generation) applications.
 
 ## Knowledge Base Setup
 
 ### KnowledgeBase Class
 
 ```python
+import synalinks
+
+class Document(synalinks.DataModel):
+    id: str = synalinks.Field(description="Document ID")
+    title: str = synalinks.Field(description="Document title")
+    content: str = synalinks.Field(description="Document content")
+
+embedding_model = synalinks.EmbeddingModel(model="openai/text-embedding-3-small")
+
 knowledge_base = synalinks.KnowledgeBase(
-    uri="memgraph://localhost:7687",   # Database URI
-    entity_models=[City, Country],      # Entity schemas
-    relation_models=[IsCapitalOf],      # Relation schemas
-    embedding_model=embedding_model,    # For vector search
-    metric="cosine",                    # Similarity metric
-    wipe_on_start=False,               # Clear DB on init
+    uri="duckdb://my_database.db",
+    data_models=[Document],
+    embedding_model=embedding_model,
+    metric="cosine",
+    wipe_on_start=False,
 )
 ```
 
-### Supported Databases
+### Configuration Options
 
-- **Memgraph** - `memgraph://localhost:7687`
-- **Neo4j** - `neo4j://localhost:7687`
+- **uri**: DuckDB connection string (`duckdb://./path/to/db.db` or `duckdb://:memory:`)
+- **data_models**: List of DataModel classes to create tables for
+- **embedding_model**: Optional EmbeddingModel for vector similarity search
+- **metric**: Distance metric ("cosine", "l2seq", "ip")
+- **wipe_on_start**: Whether to clear database on initialization
 
 ---
 
-## Entity and Relation Models
+## Data Models
 
-### Entity Definition
-
-```python
-class City(synalinks.Entity):
-    name: str = synalinks.Field(description="City name")
-    population: int = synalinks.Field(description="Population count")
-    country: str = synalinks.Field(description="Country name")
-
-class Country(synalinks.Entity):
-    name: str = synalinks.Field(description="Country name")
-    capital: str = synalinks.Field(description="Capital city name")
-
-class Place(synalinks.Entity):
-    name: str = synalinks.Field(description="Place name")
-    description: str = synalinks.Field(description="Place description")
-
-class Event(synalinks.Entity):
-    name: str = synalinks.Field(description="Event name")
-    date: str = synalinks.Field(description="Event date")
-```
-
-### Relation Definition
+Define your data models using `synalinks.DataModel`. The first field is used as the primary key.
 
 ```python
-class IsCapitalOf(synalinks.Relation):
-    """Indicates a city is the capital of a country."""
-    pass
+class Invoice(synalinks.DataModel):
+    invoice_number: str = synalinks.Field(description="Invoice number")
+    vendor: str = synalinks.Field(description="Vendor name")
+    total: float = synalinks.Field(description="Total amount")
+    description: str = synalinks.Field(description="Description of items")
 
-class IsLocatedIn(synalinks.Relation):
-    """Indicates something is located in a place."""
-    pass
+class Customer(synalinks.DataModel):
+    customer_id: str = synalinks.Field(description="Customer ID")
+    name: str = synalinks.Field(description="Customer name")
+    email: str = synalinks.Field(description="Email address")
 
-class IsCityOf(synalinks.Relation):
-    """Indicates a city belongs to a country."""
-    pass
-
-class TookPlaceIn(synalinks.Relation):
-    """Indicates an event occurred at a location."""
-    pass
+knowledge_base = synalinks.KnowledgeBase(
+    uri="duckdb://./business.db",
+    data_models=[Invoice, Customer],
+    embedding_model=embedding_model,
+)
 ```
 
 ---
 
-## Retrieval Modules
+## Knowledge Modules
 
-### EntityRetriever
+### EmbedKnowledge
 
-Retrieve entities by semantic similarity search.
+Generate embeddings for data models to enable similarity search.
 
 ```python
-class Query(synalinks.DataModel):
-    query: str = synalinks.Field(description="User query")
+inputs = synalinks.Input(data_model=Document)
 
-inputs = synalinks.Input(data_model=Query)
-
-retrieval_result = await synalinks.EntityRetriever(
-    entity_models=[City, Country, Place],
-    knowledge_base=knowledge_base,
-    language_model=lm,
-    return_inputs=True,
-    return_query=True,              # Include generated search query
-    k=5,                            # Number of results
+embedded = await synalinks.EmbedKnowledge(
+    embedding_model=embedding_model,
+    in_mask=["content"],
 )(inputs)
 ```
 
-**Output includes:**
-- Original inputs
-- Generated search query
-- Retrieved entities with similarity scores
+**Parameters:**
+- `embedding_model`: The embedding model to use
+- `in_mask`: Fields to include for embedding (keep only these)
+- `out_mask`: Fields to exclude from embedding (remove these)
 
-### TripletRetriever
-
-Retrieve relationship triplets (entity-relation-entity).
-
-```python
-triplets = await synalinks.TripletRetriever(
-    knowledge_base=knowledge_base,
-    language_model=lm,
-    return_inputs=True,
-)(inputs)
-```
-
-**Output includes:**
-- Retrieved triplets: (subject, relation, object)
-- Relevance scores
-
-### SimilaritySearch
-
-Direct vector similarity search.
-
-```python
-results = await synalinks.SimilaritySearch(
-    knowledge_base=knowledge_base,
-    k=10,
-)(query_embedding)
-```
-
-### TripletSearch
-
-Direct triplet pattern matching.
-
-```python
-results = await synalinks.TripletSearch(
-    knowledge_base=knowledge_base,
-    pattern={"subject_type": "City", "relation": "IsCapitalOf"},
-)(inputs)
-```
-
----
-
-## Knowledge Extraction
-
-### Entity Extraction
-
-```python
-class ExtractedEntities(synalinks.DataModel):
-    entities: List[synalinks.Entity] = synalinks.Field(
-        description="Extracted entities from text"
-    )
-
-extractor_output = await synalinks.Generator(
-    data_model=ExtractedEntities,
-    language_model=lm,
-    instructions=[
-        "Extract all named entities from the text",
-        "Include people, places, organizations, events",
-    ],
-)(text_input)
-```
-
-### Relation Extraction
-
-```python
-class ExtractedRelations(synalinks.DataModel):
-    triplets: List[dict] = synalinks.Field(
-        description="Extracted (subject, relation, object) triplets"
-    )
-
-relations = await synalinks.Generator(
-    data_model=ExtractedRelations,
-    language_model=lm,
-)(entity_output)
-```
+**Note:** Each data model should have exactly one field for embedding after masking.
 
 ### UpdateKnowledge
 
-Add extracted knowledge to the database.
+Store data models in the knowledge base.
 
 ```python
-await synalinks.UpdateKnowledge(
-    entity_models=[City, Country, Place, Event],
-    relation_models=[IsCapitalOf, IsLocatedIn],
+stored = await synalinks.UpdateKnowledge(
     knowledge_base=knowledge_base,
-)(extraction_output)
+)(extracted_data)
+```
+
+Uses the first field as the primary key for upsert operations.
+
+### RetrieveKnowledge
+
+Retrieve relevant records using LM-generated search queries.
+
+```python
+results = await synalinks.RetrieveKnowledge(
+    knowledge_base=knowledge_base,
+    language_model=language_model,
+    search_type="hybrid",
+    k=10,
+    return_inputs=True,
+    return_query=True,
+)(query_input)
+```
+
+**Search Types:**
+- `"similarity"`: Vector-based semantic search
+- `"fulltext"`: BM25-based full-text search
+- `"hybrid"`: Combines both using Reciprocal Rank Fusion (default)
+
+---
+
+## Direct Search Methods
+
+### Full-Text Search
+
+```python
+results = await knowledge_base.fulltext_search(
+    "search query",
+    k=10,
+)
+```
+
+### Similarity Search
+
+```python
+results = await knowledge_base.similarity_search(
+    "semantic query",
+    k=10,
+)
+```
+
+### Hybrid Search
+
+```python
+results = await knowledge_base.hybrid_search(
+    "search query",
+    k=10,
+    k_rank=60,
+)
+```
+
+### Get by ID
+
+```python
+record = await knowledge_base.get("id_value")
+```
+
+### Get All Records
+
+```python
+records = await knowledge_base.getall(
+    Document.to_symbolic_data_model(),
+    limit=50,
+    offset=0,
+)
+```
+
+### Raw SQL Query
+
+```python
+results = await knowledge_base.query(
+    "SELECT * FROM Invoice WHERE total > ?",
+    params={"1": 100.0},
+)
 ```
 
 ---
@@ -198,36 +187,29 @@ class Answer(synalinks.DataModel):
     answer: str = synalinks.Field(description="Answer based on retrieved context")
 
 async def create_rag_program():
-    lm = synalinks.LanguageModel(model="ollama/mistral")
-    em = synalinks.EmbeddingModel(model="ollama/mxbai-embed-large")
+    language_model = synalinks.LanguageModel(model="openai/gpt-4.1-mini")
+    embedding_model = synalinks.EmbeddingModel(model="openai/text-embedding-3-small")
 
-    kb = synalinks.KnowledgeBase(
-        uri="memgraph://localhost:7687",
-        entity_models=[City, Country],
-        relation_models=[IsCapitalOf],
-        embedding_model=em,
+    knowledge_base = synalinks.KnowledgeBase(
+        uri="duckdb://./documents.db",
+        data_models=[Document],
+        embedding_model=embedding_model,
     )
 
     inputs = synalinks.Input(data_model=Query)
 
-    # Retrieve relevant context
-    context = await synalinks.EntityRetriever(
-        entity_models=[City, Country],
-        knowledge_base=kb,
-        language_model=lm,
+    context = await synalinks.RetrieveKnowledge(
+        knowledge_base=knowledge_base,
+        language_model=language_model,
+        search_type="hybrid",
+        k=5,
         return_inputs=True,
-        return_query=True,
     )(inputs)
 
-    # Generate answer with context
     outputs = await synalinks.Generator(
         data_model=Answer,
-        language_model=lm,
-        instructions=[
-            "Answer based on the retrieved context",
-            "If context is not relevant, say you don't know",
-        ],
-        return_inputs=True,
+        language_model=language_model,
+        instructions="Answer based on the retrieved context. If context is not relevant, say you don't know.",
     )(context)
 
     return synalinks.Program(
@@ -240,117 +222,62 @@ program = await create_rag_program()
 result = await program(Query(query="What is the capital of France?"))
 ```
 
-### KAG (Knowledge-Augmented Generation)
-
-```python
-async def create_kag_program():
-    inputs = synalinks.Input(data_model=Query)
-
-    # Entity retrieval
-    entities = await synalinks.EntityRetriever(
-        entity_models=[City, Country, Place],
-        knowledge_base=kb,
-        language_model=lm,
-    )(inputs)
-
-    # Triplet retrieval for relationships
-    triplets = await synalinks.TripletRetriever(
-        knowledge_base=kb,
-        language_model=lm,
-    )(entities)
-
-    # Combine and generate
-    combined = entities & triplets
-    outputs = await synalinks.Generator(
-        data_model=Answer,
-        language_model=lm,
-        instructions=[
-            "Use entity facts and relationships to answer",
-            "Cite specific facts from the knowledge graph",
-        ],
-    )(combined)
-
-    return synalinks.Program(inputs=inputs, outputs=outputs)
-```
-
 ---
 
-## Multi-Stage Extraction
+## Knowledge Extraction
 
-### One-Stage Extraction
-
-Extract entities and relations in single pass.
+### Extracting Structured Data
 
 ```python
-class KnowledgeExtraction(synalinks.DataModel):
-    entities: List[dict] = synalinks.Field(description="Extracted entities")
-    relations: List[dict] = synalinks.Field(description="Extracted relations")
+class DocumentText(synalinks.DataModel):
+    text: str = synalinks.Field(description="Raw document text")
 
-extraction = await synalinks.Generator(
-    data_model=KnowledgeExtraction,
-    language_model=lm,
-)(text_input)
+class ExtractedInfo(synalinks.DataModel):
+    title: str = synalinks.Field(description="Document title")
+    summary: str = synalinks.Field(description="Brief summary")
+    key_points: list = synalinks.Field(description="Key points from the document")
+
+inputs = synalinks.Input(data_model=DocumentText)
+
+extracted = await synalinks.Generator(
+    data_model=ExtractedInfo,
+    language_model=language_model,
+    instructions="Extract the title, summary, and key points from the document.",
+)(inputs)
 ```
 
-### Two-Stage Extraction
-
-Extract entities first, then relations.
+### Extraction and Storage Pipeline
 
 ```python
-# Stage 1: Entities
-entities = await synalinks.Generator(
-    data_model=Entities,
-    language_model=lm,
-)(text_input)
+inputs = synalinks.Input(data_model=DocumentText)
 
-# Stage 2: Relations (with entity context)
-combined = text_input & entities
-relations = await synalinks.Generator(
-    data_model=Relations,
-    language_model=lm,
-)(combined)
-```
+extracted = await synalinks.Generator(
+    data_model=Invoice,
+    language_model=language_model,
+    instructions="Extract invoice information from the document.",
+)(inputs)
 
-### Multi-Stage Extraction
+stored = await synalinks.UpdateKnowledge(
+    knowledge_base=knowledge_base,
+)(extracted)
 
-Progressive refinement.
-
-```python
-# Stage 1: Coarse extraction
-coarse = await synalinks.Generator(
-    data_model=CoarseEntities,
-    language_model=lm,
-)(text)
-
-# Stage 2: Fine-grained entities
-fine = await synalinks.Generator(
-    data_model=FineEntities,
-    language_model=lm,
-)(coarse)
-
-# Stage 3: Relation extraction
-relations = await synalinks.Generator(
-    data_model=Relations,
-    language_model=lm,
-)(fine)
-
-# Stage 4: Validation
-validated = await synalinks.SelfCritique(
-    language_model=lm,
-)(relations)
+program = synalinks.Program(
+    inputs=inputs,
+    outputs=stored,
+    name="invoice_extraction",
+)
 ```
 
 ---
 
 ## Best Practices
 
-1. **Define clear entity schemas** - Specific fields improve extraction quality
-2. **Use meaningful relation names** - LLM understands natural language
-3. **Include entity descriptions** - Guide the LLM during extraction
-4. **Combine entity + triplet retrieval** - Get both facts and relationships
-5. **Add instructions for RAG** - Tell LLM how to use retrieved context
-6. **Validate extractions** - Use SelfCritique for quality control
-7. **Batch population** - Use UpdateKnowledge for bulk inserts
+1. **Define clear data models** - Specific field descriptions improve extraction quality
+2. **Use meaningful field names** - LLMs understand natural language field names
+3. **Include description fields** - Add a `description` or `content` field for text search
+4. **Use hybrid search** - Combines keyword matching and semantic similarity
+5. **Batch processing** - Use `program.predict()` for processing multiple records
+6. **First field as ID** - The first field in your DataModel is the primary key
 
 ---
 
@@ -361,16 +288,9 @@ import synalinks
 import asyncio
 
 class Document(synalinks.DataModel):
-    text: str = synalinks.Field(description="Document text")
-
-class City(synalinks.Entity):
-    name: str = synalinks.Field(description="City name")
-
-class Country(synalinks.Entity):
-    name: str = synalinks.Field(description="Country name")
-
-class IsCapitalOf(synalinks.Relation):
-    pass
+    id: str = synalinks.Field(description="Document ID")
+    title: str = synalinks.Field(description="Document title")
+    content: str = synalinks.Field(description="Document content")
 
 class Query(synalinks.DataModel):
     query: str = synalinks.Field(description="User query")
@@ -379,36 +299,50 @@ class Answer(synalinks.DataModel):
     answer: str = synalinks.Field(description="Answer")
 
 async def main():
-    lm = synalinks.LanguageModel(model="ollama/mistral")
-    em = synalinks.EmbeddingModel(model="ollama/mxbai-embed-large")
+    language_model = synalinks.LanguageModel(model="openai/gpt-4.1-mini")
+    embedding_model = synalinks.EmbeddingModel(model="openai/text-embedding-3-small")
 
-    kb = synalinks.KnowledgeBase(
-        uri="memgraph://localhost:7687",
-        entity_models=[City, Country],
-        relation_models=[IsCapitalOf],
-        embedding_model=em,
+    knowledge_base = synalinks.KnowledgeBase(
+        uri="duckdb://./docs.db",
+        data_models=[Document],
+        embedding_model=embedding_model,
         wipe_on_start=True,
     )
 
+    # Store some documents
+    docs = [
+        Document(id="1", title="Python Basics", content="Python is a programming language..."),
+        Document(id="2", title="Machine Learning", content="ML is a subset of AI..."),
+    ]
+    for doc in docs:
+        await knowledge_base.update(doc.to_json_data_model())
+
     # Build RAG pipeline
     inputs = synalinks.Input(data_model=Query)
-    context = await synalinks.EntityRetriever(
-        entity_models=[City, Country],
-        knowledge_base=kb,
-        language_model=lm,
+
+    context = await synalinks.RetrieveKnowledge(
+        knowledge_base=knowledge_base,
+        language_model=language_model,
+        search_type="hybrid",
+        k=3,
         return_inputs=True,
     )(inputs)
+
     outputs = await synalinks.Generator(
         data_model=Answer,
-        language_model=lm,
-        instructions=["Answer using retrieved context only"],
+        language_model=language_model,
+        instructions="Answer using retrieved context only.",
     )(context)
 
-    rag = synalinks.Program(inputs=inputs, outputs=outputs, name="rag_qa")
+    rag = synalinks.Program(
+        inputs=inputs,
+        outputs=outputs,
+        name="rag_qa",
+    )
 
     synalinks.utils.plot_program(rag, to_folder=".")
 
-    result = await rag(Query(query="What is the capital of France?"))
+    result = await rag(Query(query="What is Python?"))
     print(result.prettify_json())
 
 asyncio.run(main())

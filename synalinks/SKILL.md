@@ -424,28 +424,34 @@ mcp_client = synalinks.MultiServerMCPClient({
 tools = await mcp_client.get_tools()
 ```
 
-## RAG with Knowledge Graph
+## RAG with Knowledge Base
 
 ```python
+class Document(synalinks.DataModel):
+    id: str = synalinks.Field(description="Document ID")
+    title: str = synalinks.Field(description="Title")
+    content: str = synalinks.Field(description="Content")
+
 knowledge_base = synalinks.KnowledgeBase(
-    uri="memgraph://localhost:7687",
-    entity_models=[City, Country],
-    relation_models=[IsCapitalOf],
+    uri="duckdb://./documents.db",
+    data_models=[Document],
     embedding_model=embedding_model,
+    metric="cosine",
 )
 
-retriever_output = await synalinks.EntityRetriever(
-    entity_models=[City, Country],
+context = await synalinks.RetrieveKnowledge(
     knowledge_base=knowledge_base,
     language_model=lm,
+    search_type="hybrid",
+    k=5,
     return_inputs=True,
 )(inputs)
 
 answer = await synalinks.Generator(
     data_model=Answer,
     language_model=lm,
-    instructions=["Answer based on search results"],
-)(retriever_output)
+    instructions="Answer based on retrieved context.",
+)(context)
 ```
 
 ## Saving and Loading
@@ -1047,4 +1053,4 @@ Read these for detailed information:
 - **references/modules-catalog.md** - All built-in modules (Generator, ChainOfThought, Decision, etc.)
 - **references/training-guide.md** - Rewards, optimizers, callbacks, and training workflows
 - **references/agents-tools.md** - FunctionCallingAgent, Tool, MCP integration
-- **references/knowledge-base.md** - KnowledgeBase, EntityRetriever, TripletRetriever, RAG/KAG
+- **references/knowledge-base.md** - KnowledgeBase (DuckDB), EmbedKnowledge, UpdateKnowledge, RetrieveKnowledge, RAG
