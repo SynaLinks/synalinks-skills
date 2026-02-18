@@ -1,11 +1,5 @@
 # Claude Skills for Synalinks
 
-<div align="center">
-
-⭐ If you find Synalinks useful, please star the repo (and [Synalinks](https://github.com/SynaLinks/synalinks) one)! Help us reach more AI/ML engineers and grow the community. ⭐
-
-</div>
-
 ---
 
 This repository contains skills to use with Claude Code.
