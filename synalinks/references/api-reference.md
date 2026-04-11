@@ -97,7 +97,7 @@ outputs = await synalinks.Generator(
     data_model=Answer,  # Or schema=Answer.get_schema()
     language_model=lm,
     prompt_template=None,  # Custom prompt template
-    instructions=["Be concise"],  # List of instructions
+    instructions="Be concise",  # MUST be a string (not a list!)
     examples=None,  # Few-shot examples
     return_inputs=False,  # Include inputs in output
     use_inputs_schema=False,  # Include input schema in prompt
@@ -234,15 +234,22 @@ LLM wrapper supporting multiple providers via LiteLLM.
 ```python
 lm = synalinks.LanguageModel(
     model="ollama/mistral",  # Provider/model format
-    # model="openai/gpt-4",
-    # model="anthropic/claude-3-opus",
-    # model="groq/llama-3-70b",
-    temperature=0.7,
-    max_tokens=1000,
+    # model="openai/gpt-4o-mini",
+    # model="anthropic/claude-3-sonnet-20240229",
+    # model="gemini/gemini-2.5-pro",
+    # model="groq/llama3-8b-8192",
+    # model="mistral/codestral-latest",
+    # model="xai/grok-code-fast-1",
+    # model="azure/<your_deployment_name>",
+    api_base=None,    # Optional endpoint override
+    timeout=600,      # Timeout in seconds (default 600)
+    retry=5,          # Number of retries with exponential backoff (default 5)
+    fallback=None,    # Fallback LanguageModel if this one fails
+    caching=False,    # Enable caching of LM calls
 )
 ```
 
-**Supported providers:** ollama, openai, anthropic, mistral, groq, cohere, etc.
+**Supported providers:** ollama, openai, anthropic, gemini, mistral, groq, xai, azure, hosted_vllm.
 
 ### synalinks.EmbeddingModel
 
@@ -264,6 +271,27 @@ em = synalinks.EmbeddingModel(
 ```python
 result = await synalinks.ops.concat(x1, x2, name="combined")
 # Or use operator: result = x1 + x2
+```
+
+### Masking Operations
+
+```python
+# Keep only specified fields
+result = await synalinks.ops.in_mask(x, mask=["answer"])
+# Remove specified fields
+result = await synalinks.ops.out_mask(x, mask=["thinking"])
+# Regex pattern matching
+result = await synalinks.ops.in_mask(x, pattern="^input_")
+result = await synalinks.ops.out_mask(x, pattern="name$")
+```
+
+### Aggregation Operations
+
+```python
+# Group similar fields into lists (e.g. answer, answer_1 -> answers: [...])
+result = await synalinks.ops.factorize(x)
+# Expand lists into individual fields (inverse of factorize)
+result = await synalinks.ops.decompose(x)
 ```
 
 ### Logical Operations

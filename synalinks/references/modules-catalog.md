@@ -277,6 +277,29 @@ result = await synalinks.ops.logical_not(x)
 result = ~x
 ```
 
+### Factorize / Decompose
+
+```python
+# Group similar fields into lists (e.g. answer, answer_1 -> answers: [...])
+result = await synalinks.ops.factorize(x)
+
+# Expand lists into individual fields (inverse of factorize)
+result = await synalinks.ops.decompose(x)
+```
+
+### Masking with Regex Pattern
+
+```python
+# Keep fields matching a regex pattern
+result = await synalinks.ops.in_mask(x, pattern="^input_")
+
+# Remove fields matching a regex pattern
+result = await synalinks.ops.out_mask(x, pattern="name$")
+
+# Both mask and pattern can be combined
+result = await synalinks.ops.in_mask(x, mask=["answer"], pattern="^query")
+```
+
 ---
 
 ## Creating Custom Modules

@@ -136,7 +136,7 @@ synalinks.FunctionCallingAgent(
     autonomous=True,                   # Run autonomously vs interactive
     return_inputs_with_trajectory=True, # Include full execution trajectory
     prompt_template=None,              # Custom prompt template
-    instructions=[],                   # Additional instructions
+    instructions="",                    # Additional instructions (MUST be a string)
 )
 ```
 
@@ -321,11 +321,7 @@ async def main():
         max_iterations=5,
         autonomous=True,
         return_inputs_with_trajectory=True,
-        instructions=[
-            "Always explain your reasoning",
-            "Use tools when needed, not for simple questions",
-            "Provide confidence estimate based on source quality",
-        ],
+        instructions="Always explain your reasoning. Use tools when needed, not for simple questions. Provide confidence estimate based on source quality.",
     )(inputs)
 
     agent = synalinks.Program(
