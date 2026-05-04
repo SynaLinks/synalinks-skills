@@ -54,7 +54,7 @@ class ConversationalInputGuard(synalinks.Module):
             raise ValueError("Input guard works only for ChatMessages")
         return synalinks.ChatMessage.to_symbolic_data_model(name=self.name)
 
-    def to_config(self):
+    def get_config(self):
         """Serialization config for Module subclasses."""
         return {
             "name": self.name,
@@ -101,7 +101,7 @@ class ConversationalOutputGuard(synalinks.Module):
             raise ValueError("Output guard works only for ChatMessage")
         return synalinks.ChatMessage.to_symbolic_data_model(name=self.name)
 
-    def to_config(self):
+    def get_config(self):
         """Serialization config for Module subclasses."""
         return {
             "name": self.name,

@@ -31,9 +31,29 @@ knowledge_base = synalinks.KnowledgeBase(
 
 - **uri**: DuckDB connection string (`duckdb://./path/to/db.db` or `duckdb://:memory:`)
 - **data_models**: List of DataModel classes to create tables for
-- **embedding_model**: Optional EmbeddingModel for vector similarity search
-- **metric**: Distance metric ("cosine", "l2seq", "ip")
+- **embedding_model**: Optional `EmbeddingModel` for vector similarity search. If `None`, knowledge modules fall back to `synalinks.default_embedding_model()` at call time.
+- **metric**: Distance metric (`"cosine"`, `"l2seq"`, `"ip"`)
 - **wipe_on_start**: Whether to clear database on initialization
+
+### EmbeddingModel
+
+`EmbeddingModel` lives in `synalinks.src.modules.embedding_models` and subclasses `Module`. The public API (`synalinks.EmbeddingModel`) is unchanged.
+
+```python
+em = synalinks.EmbeddingModel(
+    model="openai/text-embedding-3-small",
+    dimensions=512,                          # forwarded as a default kwarg to every call
+    fallback="ollama/mxbai-embed-large",     # str / dict / EmbeddingModel instance
+)
+
+# Set a process-wide default so modules can omit `embedding_model=`.
+synalinks.set_default_embedding_model("openai/text-embedding-3-small")
+em = synalinks.default_embedding_model()   # returns the configured instance, or None
+```
+
+### Keyword-only Module Arguments
+
+`EmbedKnowledge`, `UpdateKnowledge`, `RetrieveKnowledge`, and `StampKnowledge` use keyword-only constructors (`def __init__(self, *, ...)`). Pass every argument by name — positional calls raise `TypeError`.
 
 ---
 
@@ -167,9 +187,10 @@ records = await knowledge_base.getall(
 ### Raw SQL Query
 
 ```python
+# params is a list bound to ? placeholders, in order.
 results = await knowledge_base.query(
     "SELECT * FROM Invoice WHERE total > ?",
-    params={"1": 100.0},
+    params=[100.0],
 )
 ```
 

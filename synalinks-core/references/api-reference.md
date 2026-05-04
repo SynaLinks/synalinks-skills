@@ -32,11 +32,11 @@ synalinks.Field(
 
 ### synalinks.JsonDataModel
 
-Runtime data model with actual values. Created when DataModel is instantiated.
+Runtime data model with actual values. Independent from Pydantic.
 
 ### synalinks.SymbolicDataModel
 
-Schema-only placeholder used during graph construction. No actual data.
+Schema-only placeholder used during graph program construction. No actual data. Independent from Pydantic.
 
 ```python
 # Metaclass operations create SymbolicDataModel
@@ -51,10 +51,12 @@ isinstance(combined_schema, synalinks.SymbolicDataModel)  # True
 ### synalinks.Module
 
 Base class for all modules. Encapsulates state and computation.
+`Module.__init__` is **keyword-only** (`*,` after `self`) — most subclasses
+inherit this constraint. Exception: `Tool(func, *, ...)` keeps `func` positional.
 
 ```python
 class MyModule(synalinks.Module):
-    def __init__(self, name=None, description=None, trainable=True):
+    def __init__(self, *, name=None, description=None, trainable=True):
         super().__init__(name=name, description=description, trainable=trainable)
 
     async def call(self, inputs, training=False):
@@ -95,14 +97,17 @@ Core module for LLM generation with structured output.
 ```python
 outputs = await synalinks.Generator(
     data_model=Answer,  # Or schema=Answer.get_schema()
-    language_model=lm,
-    prompt_template=None,  # Custom prompt template
-    instructions="Be concise",  # MUST be a string (not a list!)
-    examples=None,  # Few-shot examples
+    language_model=lm,  # Optional; falls back to synalinks.default_language_model()
+    prompt_template=None,  # Custom Jinja2 prompt template
+    instructions="Be concise",  # MUST be a string, not a list
+    seed_instructions=None,  # Optional list[str] of instruction seeds for the optimizer
+    examples=None,  # Few-shot examples — list of (input_json, output_json) tuples
     return_inputs=False,  # Include inputs in output
     use_inputs_schema=False,  # Include input schema in prompt
     use_outputs_schema=False,  # Include output schema in prompt
-    streaming=False,  # Enable streaming output
+    temperature=0.0,
+    reasoning_effort=None,  # 'minimal' | 'low' | 'medium' | 'high' | 'disable' | 'none' | None
+    streaming=False,  # Streaming only when schema/data_model is None
 )(inputs)
 ```
 
@@ -229,7 +234,10 @@ program = synalinks.Sequential(
 
 ### synalinks.LanguageModel
 
-LLM wrapper supporting multiple providers via LiteLLM.
+LLM wrapper supporting multiple providers via LiteLLM. Subclasses `Module`
+(supports hooks). Accepts arbitrary `**default_kwargs` (e.g. `temperature`,
+`top_p`, `top_k`, `max_tokens`, `reasoning_effort`) merged into every call;
+per-call kwargs override.
 
 ```python
 lm = synalinks.LanguageModel(
@@ -244,23 +252,43 @@ lm = synalinks.LanguageModel(
     api_base=None,    # Optional endpoint override
     timeout=600,      # Timeout in seconds (default 600)
     retry=5,          # Number of retries with exponential backoff (default 5)
-    fallback=None,    # Fallback LanguageModel if this one fails
+    fallback=None,    # str | dict | LanguageModel — coerced via get()
     caching=False,    # Enable caching of LM calls
+    temperature=0.7,
+    max_tokens=1000,
 )
 ```
 
-**Supported providers:** ollama, openai, anthropic, gemini, mistral, groq, xai, azure, hosted_vllm.
+**Supported providers:** ollama, openai, anthropic, mistral, groq, cohere,
+deepseek, together_ai, openrouter, bedrock, doubleword, gemini, xai, azure,
+hosted_vllm, etc.
 
 ### synalinks.EmbeddingModel
 
-Embedding model wrapper.
+Embedding model wrapper. Subclasses `Module`. `__init__` is keyword-only.
+Accepts arbitrary `**default_kwargs` (e.g. `dimensions`, `encoding_format`).
 
 ```python
 em = synalinks.EmbeddingModel(
     model="ollama/mxbai-embed-large",
     # model="openai/text-embedding-3-small",
+    fallback=None,   # str | dict | EmbeddingModel
+    caching=True,
+    retry=5,
 )
 ```
+
+### Default models
+
+```python
+synalinks.set_default_language_model("openai/gpt-4o-mini")
+synalinks.set_default_embedding_model("openai/text-embedding-3-small")
+synalinks.default_language_model()    # cached LanguageModel instance
+synalinks.default_embedding_model()   # cached EmbeddingModel instance
+```
+
+String identifiers persist to `~/.synalinks/synalinks.json`. Instances and
+dict configs set the cached default for the current process only.
 
 ---
 
@@ -323,7 +351,7 @@ synalinks.rewards.ProgramAsJudge(program=judge_program)
 async def custom_reward(y_true, y_pred):
     return float(y_true.get("x") == y_pred.get("x"))
 
-program.compile(reward=synalinks.rewards.MeanRewardWrapper(fn=custom_reward))
+program.compile(reward=synalinks.rewards.RewardFunctionWrapper(fn=custom_reward))
 ```
 
 ---

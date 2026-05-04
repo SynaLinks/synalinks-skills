@@ -69,12 +69,15 @@ synalinks.rewards.CosineSimilarity(
 
 #### LMAsJudge
 
-LLM-based evaluation.
+LLM-based evaluation. Uses a `SelfCritique` module under the hood to score the prediction against (optional) ground truth.
 
 ```python
 synalinks.rewards.LMAsJudge(
     language_model=lm,
-    criteria="accuracy and completeness",
+    instructions=["Score accuracy and completeness."],  # list[str], optional
+    prompt_template=None,                                # jinja2 template, optional
+    examples=None,                                       # few-shot examples, optional
+    in_mask=["answer"],
 )
 ```
 
@@ -89,14 +92,16 @@ synalinks.rewards.ProgramAsJudge(program=judge)
 
 ### Custom Rewards
 
+The reward function must be `async` (it is awaited inside `RewardFunctionWrapper.call`).
+
 ```python
 @synalinks.saving.register_synalinks_serializable()
 async def my_reward(y_true, y_pred):
     """Custom reward function.
 
     Args:
-        y_true: Ground truth DataModel
-        y_pred: Prediction DataModel
+        y_true: Ground truth `JsonDataModel`
+        y_pred: Prediction `JsonDataModel`
 
     Returns:
         float: Reward value (typically 0.0 to 1.0)
@@ -114,7 +119,7 @@ async def my_reward(y_true, y_pred):
     return overlap / max(len(true_words), 1)
 
 program.compile(
-    reward=synalinks.rewards.MeanRewardWrapper(fn=my_reward),
+    reward=synalinks.rewards.RewardFunctionWrapper(fn=my_reward, in_mask=["answer"]),
     optimizer=...,
 )
 ```
@@ -139,11 +144,27 @@ Metrics are monitored but not used for optimization (no backpropagation).
 
 ### Built-in Metrics
 
+Word-level F-beta score family (operates on tokenized field values, supports
+`average` in `{None, "micro", "macro", "weighted"}`):
+
 ```python
-synalinks.metrics.F1Score(in_mask=["answer"])
-synalinks.metrics.Precision(in_mask=["answer"])
-synalinks.metrics.Recall(in_mask=["answer"])
+synalinks.metrics.F1Score(average="weighted", in_mask=["answer"])
+synalinks.metrics.FBetaScore(beta=0.5, average="macro", in_mask=["answer"])
+synalinks.metrics.BinaryF1Score(average="weighted")  # for boolean/multi-label fields
+synalinks.metrics.ListF1Score(average="weighted")    # for list-valued fields
 ```
+
+Plus reductions and a regression metric:
+
+```python
+synalinks.metrics.Mean()
+synalinks.metrics.Sum()
+synalinks.metrics.MeanMetricWrapper(fn=my_metric)
+synalinks.metrics.CosineSimilarity(embedding_model=em)
+```
+
+There is no separate `Precision` or `Recall` class — use `F1Score` (or wrap
+your own scorer with `MeanMetricWrapper`).
 
 ### Custom Metrics
 
@@ -153,7 +174,7 @@ async def my_metric(y_true, y_pred):
     return float(y_true.get("x") == y_pred.get("x"))
 
 program.compile(
-    metrics=[synalinks.metrics.MeanMetricWrapper(fn=my_metric)],
+    metrics=[synalinks.metrics.MeanMetricWrapper(fn=my_metric, in_mask=["x"])],
     ...
 )
 ```
@@ -166,13 +187,15 @@ Optimizers update trainable variables to maximize reward.
 
 ### RandomFewShot
 
-Randomly selects examples from training data. Simple baseline optimizer.
+Sample among the best predictions to populate the LM's prompt.
 
 ```python
 synalinks.optimizers.RandomFewShot(
-    few_shot_learning=False,    # Enable few-shot example injection
-    nb_min_examples=1,          # Minimum examples per prompt
-    nb_max_examples=3,          # Maximum examples per prompt
+    nb_min_examples=1,           # Min examples per prompt (default 1)
+    nb_max_examples=3,           # Max examples per prompt (default 3)
+    sampling="softmax",          # "random", "best", or "softmax" (default "softmax")
+    sampling_temperature=0.3,    # Softmax sampling temperature (default 0.3)
+    population_size=10,          # Best-candidate buffer (default 10)
 )
 ```
 
@@ -192,21 +215,17 @@ synalinks.optimizers.OMEGA(
 
     # Dominated Novelty Search (DNS) Parameters
     k_nearest_fitter=5,             # K nearest fitter neighbors for DNS
-    distance_function=None,         # Custom distance (default: cosine similarity)
+    distance_function=None,         # Async (c1, c2, embedding_model=None, **kw)
+                                    # callable; defaults to cosine distance
 
-    # Temperature Controls (all default to 0.3)
+    # Temperature Controls
     mutation_temperature=0.3,       # Creativity during mutation
     crossover_temperature=0.3,      # Creativity during crossover
-    selection_temperature=0.3,      # Candidate selection sharpness
-    sampling_temperature=0.3,       # Few-shot example sampling
-
-    # Few-Shot Learning (inherited from RandomFewShot)
-    few_shot_learning=False,        # Enable few-shot examples
-    nb_min_examples=1,              # Min examples per prompt
-    nb_max_examples=3,              # Max examples per prompt
+    selection_temperature=0.3,      # Softmax candidate selection sharpness
+    reasoning_effort=None,          # "minimal"|"low"|"medium"|"high"|"disable"|"none"|None
 
     # Genetic Algorithm Configuration
-    merging_rate=0.02,              # Base crossover probability
+    merging_rate=0.02,              # Base crossover probability (scales with epoch)
     population_size=10,             # Max candidates to maintain
 
     # Algorithm Selection (for ablation studies)
@@ -214,9 +233,14 @@ synalinks.optimizers.OMEGA(
     selection="softmax",            # "random", "best", or "softmax"
 
     # Customization
-    instructions=None,              # Task-specific mutation guidance
+    instructions=None,              # Task-specific mutation guidance (str)
+    name=None,
+    description=None,
 )
 ```
+
+OMEGA does NOT accept `sampling_temperature`, `few_shot_learning`,
+`nb_min_examples`, or `nb_max_examples` — those belong to `RandomFewShot`.
 
 #### How OMEGA Works
 
@@ -327,10 +351,8 @@ optimizer = synalinks.optimizers.OMEGA(
     # Greedier candidate selection
     selection_temperature=0.1,
 
-    # Enable few-shot learning with more examples
-    few_shot_learning=True,
-    nb_min_examples=2,
-    nb_max_examples=5,
+    # Reasoning effort for the mutation/crossover LM
+    reasoning_effort="medium",
 
     # Task-specific guidance
     instructions="Focus on edge cases and robustness",
@@ -413,7 +435,8 @@ OMEGA is based on:
 
 ### program.compile()
 
-Configure training before fit().
+Configure training before fit(). Accepts instances, string identifiers
+(case-insensitive, lowercase recommended), or `{"class_name", "config"}` dicts:
 
 ```python
 program.compile(
@@ -421,7 +444,28 @@ program.compile(
     optimizer=synalinks.optimizers.RandomFewShot(),
     metrics=[synalinks.metrics.F1Score()],
 )
+
+# Equivalent — string-form (resolved via rewards.get / optimizers.get / metrics.get)
+program.compile(
+    reward="exactmatch",
+    optimizer="randomfewshot",
+    metrics=["mean"],
+)
 ```
+
+`reward_weights`, `run_eagerly`, `steps_per_execution` are also accepted.
+
+When passing string identifiers for optimizers/rewards that need an LM or
+embedding model (e.g. `"omega"`, `"lmasjudge"`, `"cosinesimilarity"`), set
+the defaults first:
+
+```python
+synalinks.set_default_language_model("openai/gpt-4o-mini")
+synalinks.set_default_embedding_model("openai/text-embedding-3-small")
+```
+
+These accept a model string, a config dict, or an instance, and persist
+string identifiers to `~/.synalinks/synalinks.json`.
 
 ### program.fit()
 
@@ -429,17 +473,25 @@ Train the program.
 
 ```python
 history = await program.fit(
-    x=x_train,              # NumPy array of input DataModels
-    y=y_train,              # NumPy array of target DataModels
-    validation_split=0.2,   # Use last 20% for validation
-    # OR
-    validation_data=(x_val, y_val),
-    epochs=10,
-    batch_size=32,
-    shuffle=True,           # Shuffle training data each epoch
+    x=x_train,                  # NumPy array of input DataModels
+    y=y_train,                  # NumPy array of target DataModels
+    batch_size=1,               # Default 1
+    minibatch_size=4,           # Random val sub-sample per train batch (default 4)
+    epochs=1,                   # Default 1
+    verbose="auto",             # "auto", 0, 1, or 2
     callbacks=[...],
+    validation_split=0.1,       # Default 0.1 — last fraction held out
+    validation_data=(x_val, y_val),  # Overrides validation_split
+    initial_epoch=0,
+    steps_per_epoch=None,
+    validation_steps=None,
+    validation_batch_size=32,   # Default 32
+    validation_freq=1,          # Run end-of-epoch validation every N epochs
 )
 ```
+
+There is no public `shuffle` argument — `fit()` iterates batches with
+`shuffle=False` internally.
 
 **Return:** History object with training metrics per epoch.
 
@@ -487,15 +539,20 @@ history = await program.fit(..., callbacks=[checkpoint])
 
 ### Custom Callbacks
 
+Callback hooks are synchronous — `CallbackList` invokes them synchronously
+inside the async training loop. Available hooks: `on_{train,test,predict}_{begin,end}`,
+`on_epoch_{begin,end}`, `on_{train,test,predict}_batch_{begin,end}`. The
+bound program is available as `self.program`.
+
 ```python
 class MyCallback(synalinks.callbacks.Callback):
-    async def on_epoch_end(self, epoch, logs=None):
-        print(f"Epoch {epoch}: reward={logs.get('reward')}")
-
-    async def on_train_begin(self, logs=None):
+    def on_train_begin(self, logs=None):
         print("Training started")
 
-    async def on_train_end(self, logs=None):
+    def on_epoch_end(self, epoch, logs=None):
+        print(f"Epoch {epoch}: reward={logs.get('reward')}")
+
+    def on_train_end(self, logs=None):
         print("Training finished")
 ```
 

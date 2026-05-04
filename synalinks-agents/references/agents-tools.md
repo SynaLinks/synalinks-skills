@@ -39,18 +39,21 @@ tool = synalinks.Tool(calculate)
 
 ### Multiple Parameters
 
+All parameters must be **required** (no defaults) — LLM providers require every
+parameter to be required in their structured-output JSON schema.
+
 ```python
 @synalinks.utils.register_synalinks_serializable()
 async def search_database(
     query: str,
-    limit: int = 10,
-    category: str = "all",
+    limit: int,
+    category: str,
 ):
     """Search the database for matching records.
 
     Args:
         query: Search query string
-        limit: Maximum number of results (default: 10)
+        limit: Maximum number of results (e.g. 10)
         category: Category filter ('all', 'products', 'users')
 
     Returns:
@@ -129,16 +132,25 @@ result = await agent(Query(query="What is 15 * 7?"))
 
 ```python
 synalinks.FunctionCallingAgent(
-    data_model=FinalAnswer,           # Required: final output schema
+    data_model=FinalAnswer,            # Required: final output schema
     tools=tools,                       # Required: list of Tool instances
-    language_model=lm,                 # Required: LanguageModel
+    language_model=lm,                 # Optional if a default LM is set
     max_iterations=5,                  # Max tool calls before final answer
     autonomous=True,                   # Run autonomously vs interactive
     return_inputs_with_trajectory=True, # Include full execution trajectory
     prompt_template=None,              # Custom prompt template
-    instructions="",                    # Additional instructions (MUST be a string)
+    instructions="",                   # Instructions string (NOT a list)
+    final_instructions=None,           # Optional: overrides instructions for the final generator
+    temperature=0.0,
+    use_chain_of_thought=False,
+    reasoning_effort=None,
+    streaming=False,
 )
 ```
+
+All arguments are **keyword-only** (note the `*,` after `self` in the source).
+`language_model` may be omitted if `synalinks.set_default_language_model(...)`
+was called — `ops.predict` resolves the default at call time.
 
 ### Execution Trajectory
 
@@ -202,8 +214,8 @@ def calculate(expression: str) -> dict:
     """Calculate mathematical expression."""
     return {"result": eval(expression)}
 
-# Run with: uvicorn mcp_server:app
-app = mcp.get_asgi_app()
+# Run with: uvicorn mcp_server:app --port 8183
+app = mcp.streamable_http_app()
 ```
 
 ---
@@ -235,22 +247,6 @@ outputs = await synalinks.FunctionCallingAgent(
 
 ---
 
-## Tool Selection
-
-### ToolCalling Module
-
-For single tool selection without agent loop.
-
-```python
-outputs = await synalinks.ToolCalling(
-    tools=tools,
-    language_model=lm,
-)(inputs)
-# Returns selected tool call and result
-```
-
----
-
 ## Best Practices
 
 ### Tool Design
@@ -265,7 +261,7 @@ outputs = await synalinks.ToolCalling(
 1. **Limit max_iterations** - Prevent infinite loops
 2. **Use specific output schema** - Guide final answer format
 3. **Include trajectory** - Useful for debugging and transparency
-4. **Add instructions** - Guide agent behavior
+4. **Add instructions** - Guide agent behavior (single string, not a list)
 
 ### Example: Complete Agent
 
@@ -321,7 +317,11 @@ async def main():
         max_iterations=5,
         autonomous=True,
         return_inputs_with_trajectory=True,
-        instructions="Always explain your reasoning. Use tools when needed, not for simple questions. Provide confidence estimate based on source quality.",
+        instructions=(
+            "Always explain your reasoning. "
+            "Use tools when needed, not for simple questions. "
+            "Provide confidence estimate based on source quality."
+        ),
     )(inputs)
 
     agent = synalinks.Program(

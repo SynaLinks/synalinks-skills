@@ -207,14 +207,14 @@ result = ~x  # None if x exists, raises if x is None
 ### ChatMessages (Conversational)
 
 ```python
-from synalinks.backend import ChatMessages
-
-inputs = synalinks.Input(data_model=ChatMessages)
+inputs = synalinks.Input(data_model=synalinks.ChatMessages)
 outputs = await synalinks.Generator(
     language_model=lm,
-    prompt_template=synalinks.chat_prompt_template(),
-)(inputs)
+)(inputs)  # No data_model/schema → emits ChatMessage-like output
 ```
+
+`synalinks.ChatMessages` and `synalinks.ChatMessage` are also re-exported from
+`synalinks.backend`.
 
 ### ChatMessage Helper Functions
 
@@ -229,17 +229,6 @@ if synalinks.is_chat_message(data):
 
 # Create symbolic DataModel for output spec
 symbolic = synalinks.ChatMessage.to_symbolic_data_model(name="my_module")
-```
-
-### Entity Models (Knowledge Graph)
-
-```python
-class City(synalinks.Entity):
-    name: str = synalinks.Field(description="City name")
-    population: int = synalinks.Field(description="Population count")
-
-class IsCapitalOf(synalinks.Relation):
-    pass  # Defines relationship between entities
 ```
 
 ## Best Practices

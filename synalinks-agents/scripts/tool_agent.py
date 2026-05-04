@@ -106,11 +106,11 @@ async def main():
         max_iterations=5,
         autonomous=True,
         return_inputs_with_trajectory=True,
-        instructions=[
-            "Use tools when needed to answer the question",
-            "For math questions, always use the calculate tool",
-            "Explain your reasoning in the response",
-        ],
+        instructions=(
+            "Use tools when needed to answer the question. "
+            "For math questions, always use the calculate tool. "
+            "Explain your reasoning in the response."
+        ),
     )(inputs)
 
     agent = synalinks.Program(

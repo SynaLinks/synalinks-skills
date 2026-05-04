@@ -9,6 +9,9 @@ This script demonstrates:
 2. Implementing call() and compute_output_spec()
 3. Serialization with get_config() and from_config()
 4. Composing custom modules in programs
+
+Note: Module subclasses use get_config() (NOT to_config()) — same name as
+Program. Generator uses keyword-only args.
 """
 
 import asyncio
@@ -92,8 +95,8 @@ class QueryAnalyzer(synalinks.Module):
         analysis = await self.analyzer(inputs)
         return await self.responder(analysis)
 
-    def to_config(self):
-        """Serialization config for Module subclasses."""
+    def get_config(self):
+        """Serialization config for Module subclasses (same as Program)."""
         return {
             "return_inputs": self.return_inputs,
             "name": self.name,
