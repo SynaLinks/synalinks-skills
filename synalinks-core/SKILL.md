@@ -1,6 +1,6 @@
 ---
 name: synalinks-core
-description: Use when working with Synalinks DataModel, Field, Program, Input, Sequential / Functional / Subclassing APIs, JSON operators (+, &, |, ^, ~), synalinks.ops, saving/loading programs, configuration (enable_logging, enable_observability, set_seed, clear_session), LanguageModel, EmbeddingModel, or Keras-like LLM structured output basics.
+description: Use when working with Synalinks DataModel, Field, Input, JSON operators (+, &, |, ^, ~), synalinks.ops, configuration (enable_logging, enable_observability, set_seed, clear_session), LanguageModel, EmbeddingModel, or Keras-like LLM structured output basics. For the Program class itself (Functional / Sequential / Subclassing / Mixed APIs, save/load, summary, get_module) see synalinks-programs.
 ---
 
 # Synalinks Core Framework
@@ -117,9 +117,9 @@ print(Query.prettify_schema())
 
 See **references/data-models.md** for plain Pydantic interop, truth tables, and best practices.
 
-## Four Ways to Build Programs
+## Building Programs
 
-### 1. Functional API (Recommended for most cases)
+A minimal Functional-API program looks like this:
 
 ```python
 inputs = synalinks.Input(data_model=Query)
@@ -127,74 +127,10 @@ outputs = await synalinks.Generator(data_model=Answer, language_model=lm)(inputs
 program = synalinks.Program(inputs=inputs, outputs=outputs)
 ```
 
-### 2. Sequential API (Simple linear chains)
-
-`Sequential` requires a `description` (raises `ValueError` otherwise).
-
-```python
-program = synalinks.Sequential(
-    [
-        synalinks.Input(data_model=Query),
-        synalinks.Generator(data_model=Answer, language_model=lm),
-    ],
-    description="A simple Q&A chain",
-)
-```
-
-### 3. Subclassing (Advanced custom logic)
-
-`Module.__init__` is keyword-only (`*,` after `self`); always pass `name`/`description`/`trainable` by keyword.
-
-```python
-class MyProgram(synalinks.Program):
-    def __init__(self, language_model, name=None, description=None, trainable=True):
-        super().__init__(name=name, description=description, trainable=trainable)
-        self.language_model = language_model
-        self.gen = synalinks.Generator(
-            data_model=Answer, language_model=language_model,
-        )
-
-    async def call(self, inputs, training=False):
-        return await self.gen(inputs)
-
-    def get_config(self):
-        return {
-            "name": self.name,
-            "description": self.description,
-            "trainable": self.trainable,
-            "language_model": synalinks.saving.serialize_synalinks_object(
-                self.language_model,
-            ),
-        }
-
-    @classmethod
-    def from_config(cls, config):
-        lm = synalinks.saving.deserialize_synalinks_object(config.pop("language_model"))
-        return cls(language_model=lm, **config)
-```
-
-### 4. Mixed (Functional + Subclassing)
-
-Call `super().__init__()` TWICE — once for basic init, once with the graph.
-
-```python
-class MyProgram(synalinks.Program):
-    def __init__(self, language_model, name=None, description=None, trainable=True):
-        super().__init__(name=name, description=description, trainable=trainable)  # First call
-        self.language_model = language_model
-
-    async def build(self, inputs):
-        outputs = await synalinks.Generator(
-            data_model=Answer, language_model=self.language_model,
-        )(inputs)
-        super().__init__(
-            inputs=inputs,
-            outputs=outputs,
-            name=self.name,
-            description=self.description,
-            trainable=self.trainable,
-        )  # Second call - with graph
-```
+Synalinks supports four building APIs (Functional, Sequential, Subclassing,
+Mixed), plus save/load, `summary`, `get_module`, multi-input/multi-output
+graphs, and the build/call lifecycle. **For everything Program-related, see
+the dedicated synalinks-programs skill.**
 
 ## JSON Operators (Circuit-like Logic)
 
@@ -287,30 +223,7 @@ String identifiers persist to `~/.synalinks/synalinks.json`; passing a config di
 
 For Groq, OpenRouter, LMStudio, vLLM, see **synalinks-providers**.
 
-## Saving and Loading
-
-```python
-# Save entire program (architecture + variables + optimizer state)
-program.save("my_program.json")
-program = synalinks.Program.load("my_program.json")
-
-# Save variables only
-program.save_variables("my_program.variables.json")
-program.load_variables("my_program.variables.json")
-```
-
-## Program Inspection
-
-```python
-print(f"Number of modules: {len(program.modules)}")
-module = program.get_module(index=0)
-module = program.get_module(name="generator")
-
-print(f"Trainable variables: {len(program.trainable_variables)}")
-print(program.trainable_variables[0]["instructions"])
-
-program.summary()
-```
+For saving / loading / inspection of programs, see **synalinks-programs**.
 
 ## Configuration
 
@@ -350,6 +263,7 @@ if result is None:
 
 ## See Also
 
+- **synalinks-programs** — Program class, four building APIs, save/load, summary, multi-IO graphs
 - **synalinks-modules** — Generator, ChainOfThought, custom modules
 - **synalinks-control-flow** — Decision, Branch, guards, parallel/self-consistency patterns
 - **synalinks-agents** — FunctionCallingAgent, Tool, MCP
