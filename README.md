@@ -49,22 +49,27 @@ that ships with it); nothing else.
 
 ### Quick start (Claude Code)
 
-Install the skill, globally (available in all your projects):
-
-```shell
-npx skills add SynaLinks/synalinks-skills --skill synalinks --global
-```
-
-Or install into the **current project only** (commit `.claude/skills/` so
-teammates pick it up automatically) — run from your project root:
+`synalinks` is a skill for the **synalinks Python library**, so the natural place
+to install it is **the project where you use synalinks** — that way the agent
+gets idiomatic-synalinks guidance exactly where you write synalinks code. Project
+scope is also the CLI default, so just run this from your project root:
 
 ```shell
 npx skills add SynaLinks/synalinks-skills --skill synalinks
 ```
 
-The CLI auto-detects Claude Code and installs to `~/.claude/skills/` (with
-`--global`) or `<repo>/.claude/skills/` (project scope, the default). By default
-it symlinks the skill; pass `--copy` to copy the files instead.
+This installs into the current project (Claude Code reads it from
+`<repo>/.claude/skills/`). Commit the generated `skills-lock.json` (see
+[Updating](#updating)) so teammates and CI resolve the same skill content.
+
+Want it in **every** project instead of per-project? Install globally:
+
+```shell
+npx skills add SynaLinks/synalinks-skills --skill synalinks --global
+```
+
+That installs to `~/.claude/skills/`. By default the CLI symlinks the skill;
+pass `--copy` to copy the files instead.
 
 List what's in the repo without installing anything:
 
@@ -112,12 +117,52 @@ for the latest UI walkthrough.
 
 ## Updating
 
+The `synalinks` skill is **not** semver-versioned — it tracks the `main` branch
+of this repo. "Latest" always means the current `main` (the CLI installs from
+the default branch's HEAD; there is no version tag to pin). Update with:
+
 ```shell
-npx skills update          # update all installed skills to the latest version
+npx skills update                      # update every installed skill to latest
+npx skills update synalinks            # just this skill
 ```
 
-Use `-g`/`--global` or `-p`/`--project` to scope the update. For
-Claude.ai / Desktop, regenerate the `.skill` archive and re-upload it.
+Use `-g`/`--global` or `-p`/`--project` to scope the update. The CLI re-fetches
+this repo, recomputes the skill's content hash, and re-installs only if it
+changed from what's recorded.
+
+### Lockfile (reproducible installs)
+
+Installing writes a `skills-lock.json` in your project that pins each skill to a
+source repo + a SHA-256 content hash, e.g.:
+
+```json
+{
+  "version": 1,
+  "skills": {
+    "synalinks": {
+      "source": "SynaLinks/synalinks-skills",
+      "sourceType": "github",
+      "skillPath": "skills/synalinks/SKILL.md",
+      "computedHash": "<sha256-of-the-skill>"
+    }
+  }
+}
+```
+
+Commit `skills-lock.json` so teammates get the exact same skill content.
+`npx skills update` advances the recorded hash to the latest `main`; to restore
+the pinned state instead of updating, use:
+
+```shell
+npx skills experimental_install        # reinstall skills from skills-lock.json
+```
+
+For Claude.ai / Desktop (which take a `.skill` archive rather than the CLI),
+regenerate the archive and re-upload it:
+
+```shell
+cd synalinks-skills/skills && zip -r ../synalinks.skill synalinks
+```
 
 ## Uninstall
 
