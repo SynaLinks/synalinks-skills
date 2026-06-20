@@ -1,0 +1,987 @@
+(DEBUG) [Synalinks]
+Call ID: 046cebdd-f220-4731-beac-c328ed524c90
+Parent call ID: None
+Module: RecursiveLanguageModelAgent
+Module Name: recursive_language_model_agent
+Module Description: A recursive-language-model agent.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "description": "Input document.",
+    "properties": {
+      "text": {
+        "description": "The text to analyze",
+        "title": "Text",
+        "type": "string"
+      }
+    },
+    "required": [
+      "text"
+    ],
+    "title": "Doc",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: fbe1be54-cf54-48e6-af73-f9ad6e5b55c3
+Parent call ID: 046cebdd-f220-4731-beac-c328ed524c90
+Module: Generator
+Module Name: tool_calls_generator_recursive_language_model_agent
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "description": "Metadata-only view of the user input shown to the LM.\n\nOnly per-field previews and sizes are surfaced here to keep the prompt small\nwhen the input contains long documents or large collections. The **full**\nuntruncated values are reachable from the agent's code: read them via\n``inputs[field_name]`` (REPL agents) or by reading the JSON file named in\n``inputs_file`` (filesystem agents) — never retype them from the preview.",
+    "properties": {
+      "fields": {
+        "default": [],
+        "description": "One entry per top-level input field, each with `name`, `type`, `size` (len of string/list/dict, else null), `preview`, and `truncated` (true when preview omits part of the value). Read the complete value from the `inputs` variable or the `inputs_file`.",
+        "items": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "title": "Fields",
+        "type": "array"
+      },
+      "inputs_file": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "When set, the full untruncated inputs are stored as this JSON file in the sandbox filesystem — read it instead of retyping previews: the `read_file` tool, or in a `run_python_code` snippet `json.loads(pathlib.Path(inputs_file).read_text())` (the sandbox has no `open()`, and `json` provides only `loads` / `dumps`). When null, the full inputs are bound as the `inputs` variable.",
+        "title": "Inputs File"
+      }
+    },
+    "title": "InputsSummary",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: fbe1be54-cf54-48e6-af73-f9ad6e5b55c3
+Parent call ID: 046cebdd-f220-4731-beac-c328ed524c90
+Module: Generator
+Module Name: tool_calls_generator_recursive_language_model_agent
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "$defs": {
+      "ChatRole": {
+        "description": "The chat message roles",
+        "enum": [
+          "system",
+          "developer",
+          "user",
+          "assistant",
+          "tool",
+          "function"
+        ],
+        "title": "ChatRole",
+        "type": "string"
+      },
+      "ToolCall": {
+        "additionalProperties": false,
+        "description": "A tool call, shaped like an OpenAI Chat Completions tool call.\n\nMirrors the wire envelope (`{id, type, function: {name, arguments}}`)\nexcept that `arguments` stays a parsed dict rather than a JSON-encoded\nstring, so modules and agents can read it directly. The string encoding\nis applied only at the wire edge (see `backend.pydantic.chat_completions`).",
+        "properties": {
+          "id": {
+            "description": "The id of the tool call",
+            "title": "Id",
+            "type": "string"
+          },
+          "type": {
+            "const": "function",
+            "default": "function",
+            "description": "The tool call type (always `function` today)",
+            "title": "Type",
+            "type": "string"
+          },
+          "function": {
+            "$ref": "#/$defs/ToolCallFunction",
+            "description": "The function invocation (name + arguments)"
+          }
+        },
+        "required": [
+          "id",
+          "function"
+        ],
+        "title": "ToolCall",
+        "type": "object"
+      },
+      "ToolCallFunction": {
+        "additionalProperties": false,
+        "description": "The `function` payload of a tool call (name + parsed arguments).",
+        "properties": {
+          "name": {
+            "description": "The name of the function called",
+            "title": "Name",
+            "type": "string"
+          },
+          "arguments": {
+            "additionalProperties": true,
+            "description": "The arguments of the tool call",
+            "title": "Arguments",
+            "type": "object"
+          }
+        },
+        "required": [
+          "name",
+          "arguments"
+        ],
+        "title": "ToolCallFunction",
+        "type": "object"
+      }
+    },
+    "additionalProperties": false,
+    "description": "A chat message",
+    "properties": {
+      "role": {
+        "$ref": "#/$defs/ChatRole",
+        "description": "The chat message role"
+      },
+      "reasoning_content": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The reasoning/thinking content of the message. Keyed to match the litellm/DeepSeek `reasoning_content` chat-completion field (a provider extension, not part of the base OpenAI spec), so the message API stays a subset of the litellm-extended chat-completion message.",
+        "title": "Reasoning Content"
+      },
+      "thinking_blocks": {
+        "anyOf": [
+          {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Opaque provider-native thinking blocks (e.g. Anthropic's signed `thinking_blocks`; a litellm extension, not part of the base OpenAI spec). Carried through verbatim on assistant-message re-injection so multi-turn tool-use round-trips preserve signatures. None for providers that emit reasoning only as text.",
+        "title": "Thinking Blocks"
+      },
+      "content": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The content of the message",
+        "title": "Content"
+      },
+      "tool_call_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The id of the tool call if role is `tool`",
+        "title": "Tool Call Id"
+      },
+      "tool_calls": {
+        "anyOf": [
+          {
+            "items": {
+              "$ref": "#/$defs/ToolCall"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The tool calls of the agent",
+        "title": "Tool Calls"
+      }
+    },
+    "required": [
+      "role"
+    ],
+    "title": "ChatMessage",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 71ff8e38-1ca6-4f1a-b915-24566b397eb5
+Parent call ID: fbe1be54-cf54-48e6-af73-f9ad6e5b55c3
+Module: Generator
+Module Name: tool_calls_generator_recursive_language_model_agent
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "description": "Metadata-only view of the user input shown to the LM.\n\nOnly per-field previews and sizes are surfaced here to keep the prompt small\nwhen the input contains long documents or large collections. The **full**\nuntruncated values are reachable from the agent's code: read them via\n``inputs[field_name]`` (REPL agents) or by reading the JSON file named in\n``inputs_file`` (filesystem agents) — never retype them from the preview.",
+    "properties": {
+      "fields": {
+        "default": [],
+        "description": "One entry per top-level input field, each with `name`, `type`, `size` (len of string/list/dict, else null), `preview`, and `truncated` (true when preview omits part of the value). Read the complete value from the `inputs` variable or the `inputs_file`.",
+        "items": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "title": "Fields",
+        "type": "array"
+      },
+      "inputs_file": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "When set, the full untruncated inputs are stored as this JSON file in the sandbox filesystem — read it instead of retyping previews: the `read_file` tool, or in a `run_python_code` snippet `json.loads(pathlib.Path(inputs_file).read_text())` (the sandbox has no `open()`, and `json` provides only `loads` / `dumps`). When null, the full inputs are bound as the `inputs` variable.",
+        "title": "Inputs File"
+      }
+    },
+    "title": "InputsSummary",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 71ff8e38-1ca6-4f1a-b915-24566b397eb5
+Parent call ID: fbe1be54-cf54-48e6-af73-f9ad6e5b55c3
+Module: Generator
+Module Name: tool_calls_generator_recursive_language_model_agent
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "$defs": {
+      "ChatRole": {
+        "description": "The chat message roles",
+        "enum": [
+          "system",
+          "developer",
+          "user",
+          "assistant",
+          "tool",
+          "function"
+        ],
+        "title": "ChatRole",
+        "type": "string"
+      },
+      "ToolCall": {
+        "additionalProperties": false,
+        "description": "A tool call, shaped like an OpenAI Chat Completions tool call.\n\nMirrors the wire envelope (`{id, type, function: {name, arguments}}`)\nexcept that `arguments` stays a parsed dict rather than a JSON-encoded\nstring, so modules and agents can read it directly. The string encoding\nis applied only at the wire edge (see `backend.pydantic.chat_completions`).",
+        "properties": {
+          "id": {
+            "description": "The id of the tool call",
+            "title": "Id",
+            "type": "string"
+          },
+          "type": {
+            "const": "function",
+            "default": "function",
+            "description": "The tool call type (always `function` today)",
+            "title": "Type",
+            "type": "string"
+          },
+          "function": {
+            "$ref": "#/$defs/ToolCallFunction",
+            "description": "The function invocation (name + arguments)"
+          }
+        },
+        "required": [
+          "id",
+          "function"
+        ],
+        "title": "ToolCall",
+        "type": "object"
+      },
+      "ToolCallFunction": {
+        "additionalProperties": false,
+        "description": "The `function` payload of a tool call (name + parsed arguments).",
+        "properties": {
+          "name": {
+            "description": "The name of the function called",
+            "title": "Name",
+            "type": "string"
+          },
+          "arguments": {
+            "additionalProperties": true,
+            "description": "The arguments of the tool call",
+            "title": "Arguments",
+            "type": "object"
+          }
+        },
+        "required": [
+          "name",
+          "arguments"
+        ],
+        "title": "ToolCallFunction",
+        "type": "object"
+      }
+    },
+    "additionalProperties": false,
+    "description": "A chat message",
+    "properties": {
+      "role": {
+        "$ref": "#/$defs/ChatRole",
+        "description": "The chat message role"
+      },
+      "reasoning_content": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The reasoning/thinking content of the message. Keyed to match the litellm/DeepSeek `reasoning_content` chat-completion field (a provider extension, not part of the base OpenAI spec), so the message API stays a subset of the litellm-extended chat-completion message.",
+        "title": "Reasoning Content"
+      },
+      "thinking_blocks": {
+        "anyOf": [
+          {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Opaque provider-native thinking blocks (e.g. Anthropic's signed `thinking_blocks`; a litellm extension, not part of the base OpenAI spec). Carried through verbatim on assistant-message re-injection so multi-turn tool-use round-trips preserve signatures. None for providers that emit reasoning only as text.",
+        "title": "Thinking Blocks"
+      },
+      "content": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The content of the message",
+        "title": "Content"
+      },
+      "tool_call_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The id of the tool call if role is `tool`",
+        "title": "Tool Call Id"
+      },
+      "tool_calls": {
+        "anyOf": [
+          {
+            "items": {
+              "$ref": "#/$defs/ToolCall"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The tool calls of the agent",
+        "title": "Tool Calls"
+      }
+    },
+    "required": [
+      "role"
+    ],
+    "title": "ChatMessage",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 046cebdd-f220-4731-beac-c328ed524c90
+Parent call ID: None
+Module: RecursiveLanguageModelAgent
+Module Name: recursive_language_model_agent
+Module Description: A recursive-language-model agent.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "$defs": {
+      "ChatMessage": {
+        "additionalProperties": false,
+        "description": "A chat message",
+        "properties": {
+          "role": {
+            "$ref": "#/$defs/ChatRole",
+            "description": "The chat message role"
+          },
+          "reasoning_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The reasoning/thinking content of the message. Keyed to match the litellm/DeepSeek `reasoning_content` chat-completion field (a provider extension, not part of the base OpenAI spec), so the message API stays a subset of the litellm-extended chat-completion message.",
+            "title": "Reasoning Content"
+          },
+          "thinking_blocks": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Opaque provider-native thinking blocks (e.g. Anthropic's signed `thinking_blocks`; a litellm extension, not part of the base OpenAI spec). Carried through verbatim on assistant-message re-injection so multi-turn tool-use round-trips preserve signatures. None for providers that emit reasoning only as text.",
+            "title": "Thinking Blocks"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The content of the message",
+            "title": "Content"
+          },
+          "tool_call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The id of the tool call if role is `tool`",
+            "title": "Tool Call Id"
+          },
+          "tool_calls": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/$defs/ToolCall"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The tool calls of the agent",
+            "title": "Tool Calls"
+          }
+        },
+        "required": [
+          "role"
+        ],
+        "title": "ChatMessage",
+        "type": "object"
+      },
+      "ChatRole": {
+        "description": "The chat message roles",
+        "enum": [
+          "system",
+          "developer",
+          "user",
+          "assistant",
+          "tool",
+          "function"
+        ],
+        "title": "ChatRole",
+        "type": "string"
+      },
+      "ToolCall": {
+        "additionalProperties": false,
+        "description": "A tool call, shaped like an OpenAI Chat Completions tool call.\n\nMirrors the wire envelope (`{id, type, function: {name, arguments}}`)\nexcept that `arguments` stays a parsed dict rather than a JSON-encoded\nstring, so modules and agents can read it directly. The string encoding\nis applied only at the wire edge (see `backend.pydantic.chat_completions`).",
+        "properties": {
+          "id": {
+            "description": "The id of the tool call",
+            "title": "Id",
+            "type": "string"
+          },
+          "type": {
+            "const": "function",
+            "default": "function",
+            "description": "The tool call type (always `function` today)",
+            "title": "Type",
+            "type": "string"
+          },
+          "function": {
+            "$ref": "#/$defs/ToolCallFunction",
+            "description": "The function invocation (name + arguments)"
+          }
+        },
+        "required": [
+          "id",
+          "function"
+        ],
+        "title": "ToolCall",
+        "type": "object"
+      },
+      "ToolCallFunction": {
+        "additionalProperties": false,
+        "description": "The `function` payload of a tool call (name + parsed arguments).",
+        "properties": {
+          "name": {
+            "description": "The name of the function called",
+            "title": "Name",
+            "type": "string"
+          },
+          "arguments": {
+            "additionalProperties": true,
+            "description": "The arguments of the tool call",
+            "title": "Arguments",
+            "type": "object"
+          }
+        },
+        "required": [
+          "name",
+          "arguments"
+        ],
+        "title": "ToolCallFunction",
+        "type": "object"
+      }
+    },
+    "properties": {
+      "messages": {
+        "default": [],
+        "description": "The list of chat messages",
+        "items": {
+          "$ref": "#/$defs/ChatMessage"
+        },
+        "title": "Messages",
+        "type": "array"
+      },
+      "word_count": {
+        "description": "Number of words in the text",
+        "title": "Word Count",
+        "type": "integer"
+      },
+      "answer": {
+        "description": "A short summary of the result",
+        "title": "Answer",
+        "type": "string"
+      }
+    },
+    "required": [
+      "word_count",
+      "answer"
+    ],
+    "title": "ChatMessages",
+    "type": "object"
+  }
+]
+
+[Synalinks]
+Call ID: 6399ced8-a56e-4e61-8d2f-6c43123815ff
+Parent call ID: None
+Module: Functional
+Module Name: rlm_word_counter
+Module Description: Counts words in a text using code execution
+Data Model JSON:
+[
+  {
+    "text": "The quick brown fox jumps over the lazy dog. Synalinks builds neuro-symbolic language model programs. Recursive language models reason by running code in a sandbox."
+  }
+]
+
+[Synalinks]
+Call ID: c9594389-7e64-49a2-842f-00c06b4bd6c6
+Parent call ID: 6399ced8-a56e-4e61-8d2f-6c43123815ff
+Module: RecursiveLanguageModelAgent
+Module Name: recursive_language_model_agent
+Module Description: A recursive-language-model agent.
+Data Model JSON:
+[
+  {
+    "text": "The quick brown fox jumps over the lazy dog. Synalinks builds neuro-symbolic language model programs. Recursive language models reason by running code in a sandbox."
+  }
+]
+
+[Synalinks]
+Call ID: 900fd58d-8e66-4d34-99e1-1944d1201347
+Parent call ID: c9594389-7e64-49a2-842f-00c06b4bd6c6
+Module: Generator
+Module Name: tool_calls_generator_recursive_language_model_agent
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "fields": [
+      {
+        "name": "text",
+        "type": "str",
+        "size": 164,
+        "preview": "The quick brown fox jumps over the lazy dog. Synalinks builds neuro-symbolic language model programs. Recursive language models reason by running code in a sandbox.",
+        "truncated": false
+      }
+    ],
+    "tools": [
+      {
+        "name": "submit",
+        "description": "Submit the final answer and end the run.",
+        "parameters": {
+          "properties": {
+            "result": {
+              "additionalProperties": false,
+              "description": "The final answer. Must match the target output schema: all required fields present with matching types.",
+              "properties": {
+                "word_count": {
+                  "description": "Number of words in the text",
+                  "title": "Word Count",
+                  "type": "integer"
+                },
+                "answer": {
+                  "description": "A short summary of the result",
+                  "title": "Answer",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "word_count",
+                "answer"
+              ],
+              "title": "Result",
+              "type": "object"
+            }
+          },
+          "required": [
+            "result"
+          ]
+        }
+      }
+    ],
+    "messages": []
+  }
+]
+
+[Synalinks]
+Call ID: b1fe6201-2cef-48fa-8549-54e8cdd5818a
+Parent call ID: 900fd58d-8e66-4d34-99e1-1944d1201347
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "messages": [
+      {
+        "role": "system",
+        "content": "<instructions>\nYou solve the user task by calling a SINGLE tool,\n`run_python_code(code=...)`, which runs your snippet in a\npersistent sandbox and returns `{\"stdout\": ..., \"stderr\": ..., \"error\": ...}`.\nState persists across calls: variables, imports and function definitions stay\ndefined.\n\nIMPORTANT: This is ITERATIVE. Each snippet runs, you read the output, then you\ndecide what to do next. Do NOT try to solve everything in one step.\n\nThe user input is bound as a dict named `inputs` in the sandbox, the full,\nuntruncated value. In the prompt you only see an `InputsSummary` with previews\nand sizes; always read the real values through `inputs[field]` inside your\ncode, never re-type them from the preview.\n\nUse `print(...)` to log intermediate observations. `submit` and any tools\nbound to the agent are functions available *inside* the sandbox (see the tools\ncatalog), not separate tool calls — call them directly, e.g.\n`out = submit(...)`. Reach them only from the code you pass to\n`run_python_code`.\n\nA snippet looks like this (note the variable is `inputs`, plural — it is a\ndict; `input` is something else):\n\n    text = inputs[\"some_field\"]          # read the full value via the binding\n    submit(result={\"answer\": text[:200]})\n\nTermination: call `submit(result={...})` from inside your snippet, with\n`result` matching its schema. It captures the answer and ends the run in one\nstep. If the payload fails schema validation you'll see the error on the next\nturn and can retry.\n\n`submit` is the only termination path; calling `run_python_code` with an\nempty snippet is a no-op and you'll be reminded to call `submit`. Don't run\nout of iterations without calling it.\n\nCode runs in a real Python 3 interpreter (CPython) with the full standard library and any installed third-party packages. State persists across runs: variables, imports, functions and classes defined in earlier runs remain available, and an error does not reset the namespace. Use `print(...)` to emit results to stdout; the value of the snippet's last expression is also captured (the `result` convention — end with a `result` expression to return it). Any tools bound to the sandbox are exposed as global functions; call them directly, `result = tool_name(...)`. By default the sandbox is confined: `open(...)` / `pathlib` and the file tools (`read_file`, `write_file`, `list_files`, ...) operate on one shared virtual filesystem (use absolute paths like `/work/out.txt`), the host filesystem is hidden, and outbound network is disabled — reach the network only through a bound tool such as `http_fetch` when one is provided.\n</instructions>\n"
+      },
+      {
+        "role": "user",
+        "content": "<input>\n{'fields': [{'name': 'text', 'type': 'str', 'size': 164, 'preview': 'The quick brown fox jumps over the lazy dog. Synalinks builds neuro-symbolic language model programs. Recursive language models reason by running code in a sandbox.', 'truncated': False}], 'tools': [{'name': 'submit', 'description': 'Submit the final answer and end the run.', 'parameters': {'properties': {'result': {'additionalProperties': False, 'description': 'The final answer. Must match the target output schema: all required fields present with matching types.', 'properties': {'word_count': {'description': 'Number of words in the text', 'title': 'Word Count', 'type': 'integer'}, 'answer': {'description': 'A short summary of the result', 'title': 'Answer', 'type': 'string'}}, 'required': ['word_count', 'answer'], 'title': 'Result', 'type': 'object'}}, 'required': ['result']}}]}\n</input>\n<output>\n"
+      }
+    ]
+  }
+]
+
+[Synalinks]
+Call ID: b1fe6201-2cef-48fa-8549-54e8cdd5818a
+Parent call ID: 900fd58d-8e66-4d34-99e1-1944d1201347
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "role": "assistant",
+    "content": "",
+    "reasoning_content": "Okay, let's see. The user provided a text and wants me to process it. The tools available include a submit function that requires a result with word_count and answer. The task is to count the words and provide a summary.\n\nFirst, I need to read the text from the inputs. The text is in the 'fields' list under 'text'. Let me check the size, but the truncated field is False, so the full text is available. \n\nNext, I'll calculate the word count. Split the text by spaces and count the elements. But wait, maybe using split() isn't accurate for all cases, but given the example text, it should work. Let me test with the sample text: \"The quick brown fox...\" which has 20 words. Wait, let me count: The (1), quick (2), brown (3), fox (4), jumps (5), over (6), the (7), lazy (8), dog. (9) Then Synalinks (10), builds (11), neuro-symbolic (12), language (13), model (14), programs. (15) Recursive (16), language (17), models (18), reason (19), by (20), running (21), code (22), in (23), a (24), sandbox. (25) Wait, that's 25 words. Hmm, maybe the split method will handle that.\n\nWait, the example text given in the preview is: \"The quick brown fox jumps over the lazy dog. Synalinks builds neuro-symbolic language model programs. Recursive language models reason by running code in a sandbox.\" Let me split by spaces and count. Let's see:\n\nSplit the text into words. The first sentence has 9 words. Then \"Synalinks builds neuro-symbolic language model programs.\" is 7 words. Then \"Recursive language models reason by running code in a sandbox.\" is 11 words. Total 9+7+11=27? Wait, maybe I'm miscounting. Let me do it again:\n\nOriginal text: \"The quick brown fox jumps over the lazy dog. Synalinks builds neuro-symbolic language model programs. Recursive language models reason by running code in a sandbox.\"\n\nBreaking it down:\n\n1. The\n2. quick\n3. brown\n4. fox\n5. jumps\n6. over\n7. the\n8. lazy\n9. dog.\n10. Synalinks\n11. builds\n12. neuro-symbolic\n13. language\n14. model\n15. programs.\n16. Recursive\n17. language\n18. models\n19. reason\n20. by\n21. running\n22. code\n23. in\n24. a\n25. sandbox.\n\nWait, that's 25 words. So the word count is 25. But maybe the split() function will split on spaces, so the actual count might vary. Let me code it.\n\nSo, in Python, I can do len(text.split()), but need to make sure that punctuation is handled. For example, \"dog.\" is considered one word. The split() method splits on whitespace, so it's okay. So the code would be:\n\ntext = inputs[\"text\"]\nwords = text.split()\nword_count = len(words)\nanswer = \"Summary of the text: The text discusses Synalinks' neuro-symbolic language models and their ability to reason by executing code in a sandbox environment.\"\n\nThen, submit the result with word_count and answer. The answer should be a short summary. The example text mentions Synalinks, neuro-symbolic models, reasoning by running code. So the summary should capture that.\n\nSo the code would be:\n\ntext = inputs[\"text\"]\nwords = text.split()\nword_count = len(words)\nanswer = \"The text introduces Synalinks' neuro-symbolic language models capable of reasoning through code execution in a sandbox.\"\nsubmit(result={\"word_count\": word_count, \"answer\": answer})\n\nWait, but the answer needs to be a short summary. Let me check the example text again. The first part is about the quick brown fox... then mentions Synalinks builds neuro-symbolic language model programs. Then Recursive models reason by running code. So the summary should mention Synalinks' models and their reasoning via code sandbox.\n\nSo the answer could be: \"The text discusses Synalinks' neuro-symbolic language models that reason by executing code in a sandbox environment.\"\n\nThat's concise. So the code should generate that. Then submit with word_count and answer.\n",
+    "tool_calls": [
+      {
+        "id": "call_6gshojna",
+        "type": "function",
+        "function": {
+          "name": "run_python_code",
+          "arguments": {
+            "code": "text = inputs[\"text\"]\nwords = text.split()\nword_count = len(words)\nanswer = \"The text discusses Synalinks' neuro-symbolic language models that reason by executing code in a sandbox environment.\"\nsubmit(result={\"word_count\": word_count, \"answer\": answer})"
+          }
+        }
+      }
+    ]
+  }
+]
+
+[Synalinks]
+Call ID: 900fd58d-8e66-4d34-99e1-1944d1201347
+Parent call ID: c9594389-7e64-49a2-842f-00c06b4bd6c6
+Module: Generator
+Module Name: tool_calls_generator_recursive_language_model_agent
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "role": "assistant",
+    "content": "",
+    "reasoning_content": "Okay, let's see. The user provided a text and wants me to process it. The tools available include a submit function that requires a result with word_count and answer. The task is to count the words and provide a summary.\n\nFirst, I need to read the text from the inputs. The text is in the 'fields' list under 'text'. Let me check the size, but the truncated field is False, so the full text is available. \n\nNext, I'll calculate the word count. Split the text by spaces and count the elements. But wait, maybe using split() isn't accurate for all cases, but given the example text, it should work. Let me test with the sample text: \"The quick brown fox...\" which has 20 words. Wait, let me count: The (1), quick (2), brown (3), fox (4), jumps (5), over (6), the (7), lazy (8), dog. (9) Then Synalinks (10), builds (11), neuro-symbolic (12), language (13), model (14), programs. (15) Recursive (16), language (17), models (18), reason (19), by (20), running (21), code (22), in (23), a (24), sandbox. (25) Wait, that's 25 words. Hmm, maybe the split method will handle that.\n\nWait, the example text given in the preview is: \"The quick brown fox jumps over the lazy dog. Synalinks builds neuro-symbolic language model programs. Recursive language models reason by running code in a sandbox.\" Let me split by spaces and count. Let's see:\n\nSplit the text into words. The first sentence has 9 words. Then \"Synalinks builds neuro-symbolic language model programs.\" is 7 words. Then \"Recursive language models reason by running code in a sandbox.\" is 11 words. Total 9+7+11=27? Wait, maybe I'm miscounting. Let me do it again:\n\nOriginal text: \"The quick brown fox jumps over the lazy dog. Synalinks builds neuro-symbolic language model programs. Recursive language models reason by running code in a sandbox.\"\n\nBreaking it down:\n\n1. The\n2. quick\n3. brown\n4. fox\n5. jumps\n6. over\n7. the\n8. lazy\n9. dog.\n10. Synalinks\n11. builds\n12. neuro-symbolic\n13. language\n14. model\n15. programs.\n16. Recursive\n17. language\n18. models\n19. reason\n20. by\n21. running\n22. code\n23. in\n24. a\n25. sandbox.\n\nWait, that's 25 words. So the word count is 25. But maybe the split() function will split on spaces, so the actual count might vary. Let me code it.\n\nSo, in Python, I can do len(text.split()), but need to make sure that punctuation is handled. For example, \"dog.\" is considered one word. The split() method splits on whitespace, so it's okay. So the code would be:\n\ntext = inputs[\"text\"]\nwords = text.split()\nword_count = len(words)\nanswer = \"Summary of the text: The text discusses Synalinks' neuro-symbolic language models and their ability to reason by executing code in a sandbox environment.\"\n\nThen, submit the result with word_count and answer. The answer should be a short summary. The example text mentions Synalinks, neuro-symbolic models, reasoning by running code. So the summary should capture that.\n\nSo the code would be:\n\ntext = inputs[\"text\"]\nwords = text.split()\nword_count = len(words)\nanswer = \"The text introduces Synalinks' neuro-symbolic language models capable of reasoning through code execution in a sandbox.\"\nsubmit(result={\"word_count\": word_count, \"answer\": answer})\n\nWait, but the answer needs to be a short summary. Let me check the example text again. The first part is about the quick brown fox... then mentions Synalinks builds neuro-symbolic language model programs. Then Recursive models reason by running code. So the summary should mention Synalinks' models and their reasoning via code sandbox.\n\nSo the answer could be: \"The text discusses Synalinks' neuro-symbolic language models that reason by executing code in a sandbox environment.\"\n\nThat's concise. So the code should generate that. Then submit with word_count and answer.\n",
+    "tool_calls": [
+      {
+        "id": "call_6gshojna",
+        "type": "function",
+        "function": {
+          "name": "run_python_code",
+          "arguments": {
+            "code": "text = inputs[\"text\"]\nwords = text.split()\nword_count = len(words)\nanswer = \"The text discusses Synalinks' neuro-symbolic language models that reason by executing code in a sandbox environment.\"\nsubmit(result={\"word_count\": word_count, \"answer\": answer})"
+          }
+        }
+      }
+    ]
+  }
+]
+
+[Synalinks]
+Call ID: b71197c8-c4a0-4408-8a51-58ad3caf8bd8
+Parent call ID: b1fe6201-2cef-48fa-8549-54e8cdd5818a
+Module: Tool
+Module Name: run_python_code
+Module Description: Execute one Python snippet in the persistent sandbox.
+Keyword Arguments:
+{
+  "code": "text = inputs[\"text\"]\nwords = text.split()\nword_count = len(words)\nanswer = \"The text discusses Synalinks' neuro-symbolic language models that reason by executing code in a sandbox environment.\"\nsubmit(result={\"word_count\": word_count, \"answer\": answer})"
+}
+
+[Synalinks]
+Call ID: 61a1d437-04e0-4005-90f5-6226924ae618
+Parent call ID: b71197c8-c4a0-4408-8a51-58ad3caf8bd8
+Module: Tool
+Module Name: submit
+Module Description: Submit the final answer and end the run.
+Keyword Arguments:
+{
+  "result": {
+    "word_count": 25,
+    "answer": "The text discusses Synalinks' neuro-symbolic language models that reason by executing code in a sandbox environment."
+  }
+}
+
+[Synalinks]
+Call ID: 61a1d437-04e0-4005-90f5-6226924ae618
+Parent call ID: b71197c8-c4a0-4408-8a51-58ad3caf8bd8
+Module: Tool
+Module Name: submit
+Module Description: Submit the final answer and end the run.
+Data Model JSON:
+[
+  {
+    "submitted": {
+      "word_count": 25,
+      "answer": "The text discusses Synalinks' neuro-symbolic language models that reason by executing code in a sandbox environment."
+    }
+  }
+]
+
+[Synalinks]
+Call ID: b71197c8-c4a0-4408-8a51-58ad3caf8bd8
+Parent call ID: b1fe6201-2cef-48fa-8549-54e8cdd5818a
+Module: Tool
+Module Name: run_python_code
+Module Description: Execute one Python snippet in the persistent sandbox.
+Data Model JSON:
+[
+  {
+    "stdout": ""
+  }
+]
+
+[Synalinks]
+Call ID: c9594389-7e64-49a2-842f-00c06b4bd6c6
+Parent call ID: 6399ced8-a56e-4e61-8d2f-6c43123815ff
+Module: RecursiveLanguageModelAgent
+Module Name: recursive_language_model_agent
+Module Description: A recursive-language-model agent.
+Data Model JSON:
+[
+  {
+    "messages": [
+      {
+        "role": "assistant",
+        "reasoning_content": "Okay, let's see. The user provided a text and wants me to process it. The tools available include a submit function that requires a result with word_count and answer. The task is to count the words and provide a summary.\n\nFirst, I need to read the text from the inputs. The text is in the 'fields' list under 'text'. Let me check the size, but the truncated field is False, so the full text is available. \n\nNext, I'll calculate the word count. Split the text by spaces and count the elements. But wait, maybe using split() isn't accurate for all cases, but given the example text, it should work. Let me test with the sample text: \"The quick brown fox...\" which has 20 words. Wait, let me count: The (1), quick (2), brown (3), fox (4), jumps (5), over (6), the (7), lazy (8), dog. (9) Then Synalinks (10), builds (11), neuro-symbolic (12), language (13), model (14), programs. (15) Recursive (16), language (17), models (18), reason (19), by (20), running (21), code (22), in (23), a (24), sandbox. (25) Wait, that's 25 words. Hmm, maybe the split method will handle that.\n\nWait, the example text given in the preview is: \"The quick brown fox jumps over the lazy dog. Synalinks builds neuro-symbolic language model programs. Recursive language models reason by running code in a sandbox.\" Let me split by spaces and count. Let's see:\n\nSplit the text into words. The first sentence has 9 words. Then \"Synalinks builds neuro-symbolic language model programs.\" is 7 words. Then \"Recursive language models reason by running code in a sandbox.\" is 11 words. Total 9+7+11=27? Wait, maybe I'm miscounting. Let me do it again:\n\nOriginal text: \"The quick brown fox jumps over the lazy dog. Synalinks builds neuro-symbolic language model programs. Recursive language models reason by running code in a sandbox.\"\n\nBreaking it down:\n\n1. The\n2. quick\n3. brown\n4. fox\n5. jumps\n6. over\n7. the\n8. lazy\n9. dog.\n10. Synalinks\n11. builds\n12. neuro-symbolic\n13. language\n14. model\n15. programs.\n16. Recursive\n17. language\n18. models\n19. reason\n20. by\n21. running\n22. code\n23. in\n24. a\n25. sandbox.\n\nWait, that's 25 words. So the word count is 25. But maybe the split() function will split on spaces, so the actual count might vary. Let me code it.\n\nSo, in Python, I can do len(text.split()), but need to make sure that punctuation is handled. For example, \"dog.\" is considered one word. The split() method splits on whitespace, so it's okay. So the code would be:\n\ntext = inputs[\"text\"]\nwords = text.split()\nword_count = len(words)\nanswer = \"Summary of the text: The text discusses Synalinks' neuro-symbolic language models and their ability to reason by executing code in a sandbox environment.\"\n\nThen, submit the result with word_count and answer. The answer should be a short summary. The example text mentions Synalinks, neuro-symbolic models, reasoning by running code. So the summary should capture that.\n\nSo the code would be:\n\ntext = inputs[\"text\"]\nwords = text.split()\nword_count = len(words)\nanswer = \"The text introduces Synalinks' neuro-symbolic language models capable of reasoning through code execution in a sandbox.\"\nsubmit(result={\"word_count\": word_count, \"answer\": answer})\n\nWait, but the answer needs to be a short summary. Let me check the example text again. The first part is about the quick brown fox... then mentions Synalinks builds neuro-symbolic language model programs. Then Recursive models reason by running code. So the summary should mention Synalinks' models and their reasoning via code sandbox.\n\nSo the answer could be: \"The text discusses Synalinks' neuro-symbolic language models that reason by executing code in a sandbox environment.\"\n\nThat's concise. So the code should generate that. Then submit with word_count and answer.\n",
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_6gshojna",
+            "type": "function",
+            "function": {
+              "name": "run_python_code",
+              "arguments": {
+                "code": "text = inputs[\"text\"]\nwords = text.split()\nword_count = len(words)\nanswer = \"The text discusses Synalinks' neuro-symbolic language models that reason by executing code in a sandbox environment.\"\nsubmit(result={\"word_count\": word_count, \"answer\": answer})"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "content": {
+          "stdout": "",
+          "submit": "accepted"
+        },
+        "tool_call_id": "call_6gshojna"
+      }
+    ],
+    "word_count": 25,
+    "answer": "The text discusses Synalinks' neuro-symbolic language models that reason by executing code in a sandbox environment."
+  }
+]
+
+[Synalinks]
+Call ID: 6399ced8-a56e-4e61-8d2f-6c43123815ff
+Parent call ID: None
+Module: Functional
+Module Name: rlm_word_counter
+Module Description: Counts words in a text using code execution
+Data Model JSON:
+[
+  {
+    "messages": [
+      {
+        "role": "assistant",
+        "reasoning_content": "Okay, let's see. The user provided a text and wants me to process it. The tools available include a submit function that requires a result with word_count and answer. The task is to count the words and provide a summary.\n\nFirst, I need to read the text from the inputs. The text is in the 'fields' list under 'text'. Let me check the size, but the truncated field is False, so the full text is available. \n\nNext, I'll calculate the word count. Split the text by spaces and count the elements. But wait, maybe using split() isn't accurate for all cases, but given the example text, it should work. Let me test with the sample text: \"The quick brown fox...\" which has 20 words. Wait, let me count: The (1), quick (2), brown (3), fox (4), jumps (5), over (6), the (7), lazy (8), dog. (9) Then Synalinks (10), builds (11), neuro-symbolic (12), language (13), model (14), programs. (15) Recursive (16), language (17), models (18), reason (19), by (20), running (21), code (22), in (23), a (24), sandbox. (25) Wait, that's 25 words. Hmm, maybe the split method will handle that.\n\nWait, the example text given in the preview is: \"The quick brown fox jumps over the lazy dog. Synalinks builds neuro-symbolic language model programs. Recursive language models reason by running code in a sandbox.\" Let me split by spaces and count. Let's see:\n\nSplit the text into words. The first sentence has 9 words. Then \"Synalinks builds neuro-symbolic language model programs.\" is 7 words. Then \"Recursive language models reason by running code in a sandbox.\" is 11 words. Total 9+7+11=27? Wait, maybe I'm miscounting. Let me do it again:\n\nOriginal text: \"The quick brown fox jumps over the lazy dog. Synalinks builds neuro-symbolic language model programs. Recursive language models reason by running code in a sandbox.\"\n\nBreaking it down:\n\n1. The\n2. quick\n3. brown\n4. fox\n5. jumps\n6. over\n7. the\n8. lazy\n9. dog.\n10. Synalinks\n11. builds\n12. neuro-symbolic\n13. language\n14. model\n15. programs.\n16. Recursive\n17. language\n18. models\n19. reason\n20. by\n21. running\n22. code\n23. in\n24. a\n25. sandbox.\n\nWait, that's 25 words. So the word count is 25. But maybe the split() function will split on spaces, so the actual count might vary. Let me code it.\n\nSo, in Python, I can do len(text.split()), but need to make sure that punctuation is handled. For example, \"dog.\" is considered one word. The split() method splits on whitespace, so it's okay. So the code would be:\n\ntext = inputs[\"text\"]\nwords = text.split()\nword_count = len(words)\nanswer = \"Summary of the text: The text discusses Synalinks' neuro-symbolic language models and their ability to reason by executing code in a sandbox environment.\"\n\nThen, submit the result with word_count and answer. The answer should be a short summary. The example text mentions Synalinks, neuro-symbolic models, reasoning by running code. So the summary should capture that.\n\nSo the code would be:\n\ntext = inputs[\"text\"]\nwords = text.split()\nword_count = len(words)\nanswer = \"The text introduces Synalinks' neuro-symbolic language models capable of reasoning through code execution in a sandbox.\"\nsubmit(result={\"word_count\": word_count, \"answer\": answer})\n\nWait, but the answer needs to be a short summary. Let me check the example text again. The first part is about the quick brown fox... then mentions Synalinks builds neuro-symbolic language model programs. Then Recursive models reason by running code. So the summary should mention Synalinks' models and their reasoning via code sandbox.\n\nSo the answer could be: \"The text discusses Synalinks' neuro-symbolic language models that reason by executing code in a sandbox environment.\"\n\nThat's concise. So the code should generate that. Then submit with word_count and answer.\n",
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_6gshojna",
+            "type": "function",
+            "function": {
+              "name": "run_python_code",
+              "arguments": {
+                "code": "text = inputs[\"text\"]\nwords = text.split()\nword_count = len(words)\nanswer = \"The text discusses Synalinks' neuro-symbolic language models that reason by executing code in a sandbox environment.\"\nsubmit(result={\"word_count\": word_count, \"answer\": answer})"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "content": {
+          "stdout": "",
+          "submit": "accepted"
+        },
+        "tool_call_id": "call_6gshojna"
+      }
+    ],
+    "word_count": 25,
+    "answer": "The text discusses Synalinks' neuro-symbolic language models that reason by executing code in a sandbox environment."
+  }
+]
+
+=== RLM word count ===
+{
+  "messages": [
+    {
+      "role": "assistant",
+      "reasoning_content": "Okay, let's see. The user provided a text and wants me to process it. The tools available include a submit function that requires a result with word_count and answer. The task is to count the words and provide a summary.\n\nFirst, I need to read the text from the inputs. The text is in the 'fields' list under 'text'. Let me check the size, but the truncated field is False, so the full text is available. \n\nNext, I'll calculate the word count. Split the text by spaces and count the elements. But wait, maybe using split() isn't accurate for all cases, but given the example text, it should work. Let me test with the sample text: \"The quick brown fox...\" which has 20 words. Wait, let me count: The (1), quick (2), brown (3), fox (4), jumps (5), over (6), the (7), lazy (8), dog. (9) Then Synalinks (10), builds (11), neuro-symbolic (12), language (13), model (14), programs. (15) Recursive (16), language (17), models (18), reason (19), by (20), running (21), code (22), in (23), a (24), sandbox. (25) Wait, that's 25 words. Hmm, maybe the split method will handle that.\n\nWait, the example text given in the preview is: \"The quick brown fox jumps over the lazy dog. Synalinks builds neuro-symbolic language model programs. Recursive language models reason by running code in a sandbox.\" Let me split by spaces and count. Let's see:\n\nSplit the text into words. The first sentence has 9 words. Then \"Synalinks builds neuro-symbolic language model programs.\" is 7 words. Then \"Recursive language models reason by running code in a sandbox.\" is 11 words. Total 9+7+11=27? Wait, maybe I'm miscounting. Let me do it again:\n\nOriginal text: \"The quick brown fox jumps over the lazy dog. Synalinks builds neuro-symbolic language model programs. Recursive language models reason by running code in a sandbox.\"\n\nBreaking it down:\n\n1. The\n2. quick\n3. brown\n4. fox\n5. jumps\n6. over\n7. the\n8. lazy\n9. dog.\n10. Synalinks\n11. builds\n12. neuro-symbolic\n13. language\n14. model\n15. programs.\n16. Recursive\n17. language\n18. models\n19. reason\n20. by\n21. running\n22. code\n23. in\n24. a\n25. sandbox.\n\nWait, that's 25 words. So the word count is 25. But maybe the split() function will split on spaces, so the actual count might vary. Let me code it.\n\nSo, in Python, I can do len(text.split()), but need to make sure that punctuation is handled. For example, \"dog.\" is considered one word. The split() method splits on whitespace, so it's okay. So the code would be:\n\ntext = inputs[\"text\"]\nwords = text.split()\nword_count = len(words)\nanswer = \"Summary of the text: The text discusses Synalinks' neuro-symbolic language models and their ability to reason by executing code in a sandbox environment.\"\n\nThen, submit the result with word_count and answer. The answer should be a short summary. The example text mentions Synalinks, neuro-symbolic models, reasoning by running code. So the summary should capture that.\n\nSo the code would be:\n\ntext = inputs[\"text\"]\nwords = text.split()\nword_count = len(words)\nanswer = \"The text introduces Synalinks' neuro-symbolic language models capable of reasoning through code execution in a sandbox.\"\nsubmit(result={\"word_count\": word_count, \"answer\": answer})\n\nWait, but the answer needs to be a short summary. Let me check the example text again. The first part is about the quick brown fox... then mentions Synalinks builds neuro-symbolic language model programs. Then Recursive models reason by running code. So the summary should mention Synalinks' models and their reasoning via code sandbox.\n\nSo the answer could be: \"The text discusses Synalinks' neuro-symbolic language models that reason by executing code in a sandbox environment.\"\n\nThat's concise. So the code should generate that. Then submit with word_count and answer.\n",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call_6gshojna",
+          "type": "function",
+          "function": {
+            "name": "run_python_code",
+            "arguments": {
+              "code": "text = inputs[\"text\"]\nwords = text.split()\nword_count = len(words)\nanswer = \"The text discusses Synalinks' neuro-symbolic language models that reason by executing code in a sandbox environment.\"\nsubmit(result={\"word_count\": word_count, \"answer\": answer})"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": {
+        "stdout": "",
+        "submit": "accepted"
+      },
+      "tool_call_id": "call_6gshojna"
+    }
+  ],
+  "word_count": 25,
+  "answer": "The text discusses Synalinks' neuro-symbolic language models that reason by executing code in a sandbox environment."
+}

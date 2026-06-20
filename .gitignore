@@ -66,6 +66,8 @@ cover/
 
 # Django stuff:
 *.log
+# ...but the skill ships captured run logs as reference material
+!skills/synalinks/references/*.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal

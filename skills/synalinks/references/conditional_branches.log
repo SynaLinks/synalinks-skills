@@ -1,0 +1,1091 @@
+(DEBUG) [Synalinks]
+Call ID: bc2c83cf-4de3-469d-bcd5-1e308395344b
+Parent call ID: None
+Module: Branch
+Module Name: branch
+Module Description: Use a `LanguageModel` to select which module(s) to call based on an
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "description": "Input data model.",
+    "properties": {
+      "query": {
+        "description": "The user query",
+        "title": "Query",
+        "type": "string"
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "title": "Query",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 728d9c7a-97e2-458f-9a19-8f737a34d7ac
+Parent call ID: bc2c83cf-4de3-469d-bcd5-1e308395344b
+Module: Decision
+Module Name: decision_branch
+Module Description: Perform a decision on the given input based on a question and a list of labels.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "description": "Input data model.",
+    "properties": {
+      "query": {
+        "description": "The user query",
+        "title": "Query",
+        "type": "string"
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "title": "Query",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 7a80f829-d9e6-4bd0-ade1-92bd8c1f007e
+Parent call ID: 728d9c7a-97e2-458f-9a19-8f737a34d7ac
+Module: Generator
+Module Name: generator_decision_branch
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "properties": {
+      "query": {
+        "description": "The user query",
+        "title": "Query",
+        "type": "string"
+      },
+      "question": {
+        "description": "The question to ask yourself.",
+        "title": "Question",
+        "type": "string"
+      }
+    },
+    "required": [
+      "query",
+      "question"
+    ],
+    "title": "Query",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 7a80f829-d9e6-4bd0-ade1-92bd8c1f007e
+Parent call ID: 728d9c7a-97e2-458f-9a19-8f737a34d7ac
+Module: Generator
+Module Name: generator_decision_branch
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "properties": {
+      "thinking": {
+        "description": "Your step by step thinking to choose the correct label.",
+        "title": "Thinking",
+        "type": "string"
+      },
+      "choice": {
+        "enum": [
+          "easy",
+          "difficult"
+        ],
+        "title": "Choice",
+        "type": "string"
+      }
+    },
+    "required": [
+      "thinking",
+      "choice"
+    ],
+    "title": "DecisionAnswer",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 60338b83-1e6e-42fb-ae9f-3115af14ddb9
+Parent call ID: 7a80f829-d9e6-4bd0-ade1-92bd8c1f007e
+Module: Generator
+Module Name: generator_decision_branch
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "properties": {
+      "query": {
+        "description": "The user query",
+        "title": "Query",
+        "type": "string"
+      },
+      "question": {
+        "description": "The question to ask yourself.",
+        "title": "Question",
+        "type": "string"
+      }
+    },
+    "required": [
+      "query",
+      "question"
+    ],
+    "title": "Query",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 60338b83-1e6e-42fb-ae9f-3115af14ddb9
+Parent call ID: 7a80f829-d9e6-4bd0-ade1-92bd8c1f007e
+Module: Generator
+Module Name: generator_decision_branch
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "properties": {
+      "thinking": {
+        "description": "Your step by step thinking to choose the correct label.",
+        "title": "Thinking",
+        "type": "string"
+      },
+      "choice": {
+        "enum": [
+          "easy",
+          "difficult"
+        ],
+        "title": "Choice",
+        "type": "string"
+      }
+    },
+    "required": [
+      "thinking",
+      "choice"
+    ],
+    "title": "DecisionAnswer",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 728d9c7a-97e2-458f-9a19-8f737a34d7ac
+Parent call ID: bc2c83cf-4de3-469d-bcd5-1e308395344b
+Module: Decision
+Module Name: decision_branch
+Module Description: Perform a decision on the given input based on a question and a list of labels.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "properties": {
+      "thinking": {
+        "description": "Your step by step thinking to choose the correct label.",
+        "title": "Thinking",
+        "type": "string"
+      },
+      "choice": {
+        "enum": [
+          "easy",
+          "difficult"
+        ],
+        "title": "Choice",
+        "type": "string"
+      }
+    },
+    "required": [
+      "thinking",
+      "choice"
+    ],
+    "title": "DecisionAnswer",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 9c91c1dc-e07b-487f-a53b-fb37d8a56197
+Parent call ID: 60338b83-1e6e-42fb-ae9f-3115af14ddb9
+Module: Generator
+Module Name: generator
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "properties": {
+      "query": {
+        "description": "The user query",
+        "title": "Query",
+        "type": "string"
+      },
+      "thinking": {
+        "description": "Your step by step thinking to choose the correct label.",
+        "title": "Thinking",
+        "type": "string"
+      },
+      "choice": {
+        "enum": [
+          "easy",
+          "difficult"
+        ],
+        "title": "Choice",
+        "type": "string"
+      }
+    },
+    "required": [
+      "query",
+      "thinking",
+      "choice"
+    ],
+    "title": "Query",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 9c91c1dc-e07b-487f-a53b-fb37d8a56197
+Parent call ID: 60338b83-1e6e-42fb-ae9f-3115af14ddb9
+Module: Generator
+Module Name: generator
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "description": "Short answer for easy questions.",
+    "properties": {
+      "answer": {
+        "description": "A brief, direct answer",
+        "title": "Answer",
+        "type": "string"
+      }
+    },
+    "required": [
+      "answer"
+    ],
+    "title": "SimpleAnswer",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 58f99050-4a3c-4a04-8cf8-083abdb56984
+Parent call ID: 9c91c1dc-e07b-487f-a53b-fb37d8a56197
+Module: Generator
+Module Name: generator_1
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "properties": {
+      "query": {
+        "description": "The user query",
+        "title": "Query",
+        "type": "string"
+      },
+      "thinking": {
+        "description": "Your step by step thinking to choose the correct label.",
+        "title": "Thinking",
+        "type": "string"
+      },
+      "choice": {
+        "enum": [
+          "easy",
+          "difficult"
+        ],
+        "title": "Choice",
+        "type": "string"
+      }
+    },
+    "required": [
+      "query",
+      "thinking",
+      "choice"
+    ],
+    "title": "Query",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 58f99050-4a3c-4a04-8cf8-083abdb56984
+Parent call ID: 9c91c1dc-e07b-487f-a53b-fb37d8a56197
+Module: Generator
+Module Name: generator_1
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "description": "Detailed answer with reasoning for hard questions.",
+    "properties": {
+      "thinking": {
+        "description": "Step-by-step reasoning",
+        "title": "Thinking",
+        "type": "string"
+      },
+      "answer": {
+        "description": "The detailed answer",
+        "title": "Answer",
+        "type": "string"
+      }
+    },
+    "required": [
+      "thinking",
+      "answer"
+    ],
+    "title": "DetailedAnswer",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: de05999e-f8ba-4f69-a1da-597e57ecde6d
+Parent call ID: 58f99050-4a3c-4a04-8cf8-083abdb56984
+Module: Decision
+Module Name: decision_branch
+Module Description: Perform a decision on the given input based on a question and a list of labels.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "description": "Input data model.",
+    "properties": {
+      "query": {
+        "description": "The user query",
+        "title": "Query",
+        "type": "string"
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "title": "Query",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 46261d23-a722-485c-af99-932039185b88
+Parent call ID: de05999e-f8ba-4f69-a1da-597e57ecde6d
+Module: Generator
+Module Name: generator_decision_branch
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "properties": {
+      "query": {
+        "description": "The user query",
+        "title": "Query",
+        "type": "string"
+      },
+      "question": {
+        "description": "The question to ask yourself.",
+        "title": "Question",
+        "type": "string"
+      }
+    },
+    "required": [
+      "query",
+      "question"
+    ],
+    "title": "Query",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 46261d23-a722-485c-af99-932039185b88
+Parent call ID: de05999e-f8ba-4f69-a1da-597e57ecde6d
+Module: Generator
+Module Name: generator_decision_branch
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "properties": {
+      "thinking": {
+        "description": "Your step by step thinking to choose the correct label.",
+        "title": "Thinking",
+        "type": "string"
+      },
+      "choice": {
+        "enum": [
+          "easy",
+          "difficult"
+        ],
+        "title": "Choice",
+        "type": "string"
+      }
+    },
+    "required": [
+      "thinking",
+      "choice"
+    ],
+    "title": "DecisionAnswer",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: de05999e-f8ba-4f69-a1da-597e57ecde6d
+Parent call ID: 58f99050-4a3c-4a04-8cf8-083abdb56984
+Module: Decision
+Module Name: decision_branch
+Module Description: Perform a decision on the given input based on a question and a list of labels.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "properties": {
+      "thinking": {
+        "description": "Your step by step thinking to choose the correct label.",
+        "title": "Thinking",
+        "type": "string"
+      },
+      "choice": {
+        "enum": [
+          "easy",
+          "difficult"
+        ],
+        "title": "Choice",
+        "type": "string"
+      }
+    },
+    "required": [
+      "thinking",
+      "choice"
+    ],
+    "title": "DecisionAnswer",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: ab2fcee7-6091-4b3d-a4f1-14e51402f8ed
+Parent call ID: 46261d23-a722-485c-af99-932039185b88
+Module: Generator
+Module Name: generator
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "properties": {
+      "query": {
+        "description": "The user query",
+        "title": "Query",
+        "type": "string"
+      },
+      "thinking": {
+        "description": "Your step by step thinking to choose the correct label.",
+        "title": "Thinking",
+        "type": "string"
+      },
+      "choice": {
+        "enum": [
+          "easy",
+          "difficult"
+        ],
+        "title": "Choice",
+        "type": "string"
+      }
+    },
+    "required": [
+      "query",
+      "thinking",
+      "choice"
+    ],
+    "title": "Query",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: ab2fcee7-6091-4b3d-a4f1-14e51402f8ed
+Parent call ID: 46261d23-a722-485c-af99-932039185b88
+Module: Generator
+Module Name: generator
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "description": "Short answer for easy questions.",
+    "properties": {
+      "answer": {
+        "description": "A brief, direct answer",
+        "title": "Answer",
+        "type": "string"
+      }
+    },
+    "required": [
+      "answer"
+    ],
+    "title": "SimpleAnswer",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 579978ed-f63d-4988-82e1-c78fe0cdc12c
+Parent call ID: ab2fcee7-6091-4b3d-a4f1-14e51402f8ed
+Module: Generator
+Module Name: generator_1
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "properties": {
+      "query": {
+        "description": "The user query",
+        "title": "Query",
+        "type": "string"
+      },
+      "thinking": {
+        "description": "Your step by step thinking to choose the correct label.",
+        "title": "Thinking",
+        "type": "string"
+      },
+      "choice": {
+        "enum": [
+          "easy",
+          "difficult"
+        ],
+        "title": "Choice",
+        "type": "string"
+      }
+    },
+    "required": [
+      "query",
+      "thinking",
+      "choice"
+    ],
+    "title": "Query",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 579978ed-f63d-4988-82e1-c78fe0cdc12c
+Parent call ID: ab2fcee7-6091-4b3d-a4f1-14e51402f8ed
+Module: Generator
+Module Name: generator_1
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "description": "Detailed answer with reasoning for hard questions.",
+    "properties": {
+      "thinking": {
+        "description": "Step-by-step reasoning",
+        "title": "Thinking",
+        "type": "string"
+      },
+      "answer": {
+        "description": "The detailed answer",
+        "title": "Answer",
+        "type": "string"
+      }
+    },
+    "required": [
+      "thinking",
+      "answer"
+    ],
+    "title": "DetailedAnswer",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: bc2c83cf-4de3-469d-bcd5-1e308395344b
+Parent call ID: None
+Module: Branch
+Module Name: branch
+Module Description: Use a `LanguageModel` to select which module(s) to call based on an
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "description": "Short answer for easy questions.",
+    "properties": {
+      "answer": {
+        "description": "A brief, direct answer",
+        "title": "Answer",
+        "type": "string"
+      }
+    },
+    "required": [
+      "answer"
+    ],
+    "title": "SimpleAnswer",
+    "type": "object"
+  },
+  {
+    "additionalProperties": false,
+    "description": "Detailed answer with reasoning for hard questions.",
+    "properties": {
+      "thinking": {
+        "description": "Step-by-step reasoning",
+        "title": "Thinking",
+        "type": "string"
+      },
+      "answer": {
+        "description": "The detailed answer",
+        "title": "Answer",
+        "type": "string"
+      }
+    },
+    "required": [
+      "thinking",
+      "answer"
+    ],
+    "title": "DetailedAnswer",
+    "type": "object"
+  }
+]
+
+[Synalinks]
+Call ID: d524bd45-6fd3-4e95-9dda-59f8fd1ae8a0
+Parent call ID: None
+Module: Functional
+Module Name: adaptive_qa
+Module Description: Adapts response complexity to question difficulty
+Data Model JSON:
+[
+  {
+    "query": "What color is the sky?"
+  }
+]
+
+[Synalinks]
+Call ID: 78ef544d-0e97-4149-89ed-823545b1bd1b
+Parent call ID: d524bd45-6fd3-4e95-9dda-59f8fd1ae8a0
+Module: Branch
+Module Name: branch
+Module Description: Use a `LanguageModel` to select which module(s) to call based on an
+Data Model JSON:
+[
+  {
+    "query": "What color is the sky?"
+  }
+]
+
+[Synalinks]
+Call ID: 2d3b7c51-3cd5-4a3f-a5f5-b1f4689ab3de
+Parent call ID: 78ef544d-0e97-4149-89ed-823545b1bd1b
+Module: Decision
+Module Name: decision_branch
+Module Description: Perform a decision on the given input based on a question and a list of labels.
+Data Model JSON:
+[
+  {
+    "query": "What color is the sky?"
+  }
+]
+
+[Synalinks]
+Call ID: a4e5cd94-342d-4663-876c-2b7b7197677c
+Parent call ID: 2d3b7c51-3cd5-4a3f-a5f5-b1f4689ab3de
+Module: Generator
+Module Name: generator_decision_branch
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "query": "What color is the sky?",
+    "question": "Evaluate the difficulty of this query"
+  }
+]
+
+[Synalinks]
+Call ID: 48ee5c5f-12f4-44f8-84c4-c912b2b808f3
+Parent call ID: a4e5cd94-342d-4663-876c-2b7b7197677c
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "messages": [
+      {
+        "role": "system",
+        "content": "<instructions>\nYou will be given a question, your task is to answer step-by-step to choose\none the following labels: ['easy', 'difficult']\n</instructions>\n"
+      },
+      {
+        "role": "user",
+        "content": "<input>\n{'query': 'What color is the sky?', 'question': 'Evaluate the difficulty of this query'}\n</input>\n<output>\n"
+      }
+    ]
+  }
+]
+
+[Synalinks]
+Call ID: 48ee5c5f-12f4-44f8-84c4-c912b2b808f3
+Parent call ID: a4e5cd94-342d-4663-876c-2b7b7197677c
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "thinking": "The question asks for a simple fact, which can be easily answered by most people. Therefore, I would label it as 'easy'.",
+    "choice": "easy"
+  }
+]
+
+[Synalinks]
+Call ID: a4e5cd94-342d-4663-876c-2b7b7197677c
+Parent call ID: 2d3b7c51-3cd5-4a3f-a5f5-b1f4689ab3de
+Module: Generator
+Module Name: generator_decision_branch
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "thinking": "The question asks for a simple fact, which can be easily answered by most people. Therefore, I would label it as 'easy'.",
+    "choice": "easy"
+  }
+]
+
+[Synalinks]
+Call ID: 2d3b7c51-3cd5-4a3f-a5f5-b1f4689ab3de
+Parent call ID: 78ef544d-0e97-4149-89ed-823545b1bd1b
+Module: Decision
+Module Name: decision_branch
+Module Description: Perform a decision on the given input based on a question and a list of labels.
+Data Model JSON:
+[
+  {
+    "thinking": "The question asks for a simple fact, which can be easily answered by most people. Therefore, I would label it as 'easy'.",
+    "choice": "easy"
+  }
+]
+
+[Synalinks]
+Call ID: b5ace2b2-89e2-48f8-8b30-7d18af868967
+Parent call ID: 48ee5c5f-12f4-44f8-84c4-c912b2b808f3
+Module: Generator
+Module Name: generator
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "query": "What color is the sky?",
+    "thinking": "The question asks for a simple fact, which can be easily answered by most people. Therefore, I would label it as 'easy'.",
+    "choice": "easy"
+  }
+]
+
+[Synalinks]
+Call ID: 7dc44cb3-f7db-4049-b1cb-c41e41dd5eba
+Parent call ID: b5ace2b2-89e2-48f8-8b30-7d18af868967
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "messages": [
+      {
+        "role": "system",
+        "content": "<instructions>\nYour task is to answer with a JSON containing the following keys: ['answer']\n</instructions>\n"
+      },
+      {
+        "role": "user",
+        "content": "<input>\n{'query': 'What color is the sky?', 'thinking': \"The question asks for a simple fact, which can be easily answered by most people. Therefore, I would label it as 'easy'.\", 'choice': 'easy'}\n</input>\n<output>\n"
+      }
+    ]
+  }
+]
+
+[Synalinks]
+Call ID: 7dc44cb3-f7db-4049-b1cb-c41e41dd5eba
+Parent call ID: b5ace2b2-89e2-48f8-8b30-7d18af868967
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "answer": "The sky is typically blue during the day."
+  }
+]
+
+[Synalinks]
+Call ID: b5ace2b2-89e2-48f8-8b30-7d18af868967
+Parent call ID: 48ee5c5f-12f4-44f8-84c4-c912b2b808f3
+Module: Generator
+Module Name: generator
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "answer": "The sky is typically blue during the day."
+  }
+]
+
+[Synalinks]
+Call ID: 78ef544d-0e97-4149-89ed-823545b1bd1b
+Parent call ID: d524bd45-6fd3-4e95-9dda-59f8fd1ae8a0
+Module: Branch
+Module Name: branch
+Module Description: Use a `LanguageModel` to select which module(s) to call based on an
+Data Model JSON:
+[
+  {
+    "answer": "The sky is typically blue during the day."
+  }
+]
+
+[Synalinks]
+Call ID: d524bd45-6fd3-4e95-9dda-59f8fd1ae8a0
+Parent call ID: None
+Module: Functional
+Module Name: adaptive_qa
+Module Description: Adapts response complexity to question difficulty
+Data Model JSON:
+[
+  {
+    "answer": "The sky is typically blue during the day."
+  }
+]
+
+[Synalinks]
+Call ID: e4022d06-1fd6-424b-aa98-d7ffdc346bd7
+Parent call ID: None
+Module: Functional
+Module Name: adaptive_qa
+Module Description: Adapts response complexity to question difficulty
+Data Model JSON:
+[
+  {
+    "query": "Explain the implications of quantum entanglement for cryptography"
+  }
+]
+
+[Synalinks]
+Call ID: bd2e4419-cc88-4adf-a75e-03bebc41adf8
+Parent call ID: e4022d06-1fd6-424b-aa98-d7ffdc346bd7
+Module: Branch
+Module Name: branch
+Module Description: Use a `LanguageModel` to select which module(s) to call based on an
+Data Model JSON:
+[
+  {
+    "query": "Explain the implications of quantum entanglement for cryptography"
+  }
+]
+
+[Synalinks]
+Call ID: aef2a500-59f8-464a-bd56-7dc0d7cdd324
+Parent call ID: bd2e4419-cc88-4adf-a75e-03bebc41adf8
+Module: Decision
+Module Name: decision_branch
+Module Description: Perform a decision on the given input based on a question and a list of labels.
+Data Model JSON:
+[
+  {
+    "query": "Explain the implications of quantum entanglement for cryptography"
+  }
+]
+
+[Synalinks]
+Call ID: 289412d9-a28f-41e5-876a-97166d5ad4e5
+Parent call ID: aef2a500-59f8-464a-bd56-7dc0d7cdd324
+Module: Generator
+Module Name: generator_decision_branch
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "query": "Explain the implications of quantum entanglement for cryptography",
+    "question": "Evaluate the difficulty of this query"
+  }
+]
+
+[Synalinks]
+Call ID: 7fb9cb5c-e9fe-4400-b5f5-951ebbbdb58f
+Parent call ID: 289412d9-a28f-41e5-876a-97166d5ad4e5
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "messages": [
+      {
+        "role": "system",
+        "content": "<instructions>\nYou will be given a question, your task is to answer step-by-step to choose\none the following labels: ['easy', 'difficult']\n</instructions>\n"
+      },
+      {
+        "role": "user",
+        "content": "<input>\n{'query': 'Explain the implications of quantum entanglement for cryptography', 'question': 'Evaluate the difficulty of this query'}\n</input>\n<output>\n"
+      }
+    ]
+  }
+]
+
+[Synalinks]
+Call ID: 7fb9cb5c-e9fe-4400-b5f5-951ebbbdb58f
+Parent call ID: 289412d9-a28f-41e5-876a-97166d5ad4e5
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "thinking": "The query involves understanding complex concepts from both quantum physics and cryptography. It requires a deep understanding of quantum entanglement, its properties, and how it can be applied to cryptography. Therefore, I would label this query as 'difficult'.",
+    "choice": "difficult"
+  }
+]
+
+[Synalinks]
+Call ID: 289412d9-a28f-41e5-876a-97166d5ad4e5
+Parent call ID: aef2a500-59f8-464a-bd56-7dc0d7cdd324
+Module: Generator
+Module Name: generator_decision_branch
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "thinking": "The query involves understanding complex concepts from both quantum physics and cryptography. It requires a deep understanding of quantum entanglement, its properties, and how it can be applied to cryptography. Therefore, I would label this query as 'difficult'.",
+    "choice": "difficult"
+  }
+]
+
+[Synalinks]
+Call ID: aef2a500-59f8-464a-bd56-7dc0d7cdd324
+Parent call ID: bd2e4419-cc88-4adf-a75e-03bebc41adf8
+Module: Decision
+Module Name: decision_branch
+Module Description: Perform a decision on the given input based on a question and a list of labels.
+Data Model JSON:
+[
+  {
+    "thinking": "The query involves understanding complex concepts from both quantum physics and cryptography. It requires a deep understanding of quantum entanglement, its properties, and how it can be applied to cryptography. Therefore, I would label this query as 'difficult'.",
+    "choice": "difficult"
+  }
+]
+
+[Synalinks]
+Call ID: 55bde61a-c47e-4e7b-a837-a61ccd671b6c
+Parent call ID: 7fb9cb5c-e9fe-4400-b5f5-951ebbbdb58f
+Module: Generator
+Module Name: generator_1
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "query": "Explain the implications of quantum entanglement for cryptography",
+    "thinking": "The query involves understanding complex concepts from both quantum physics and cryptography. It requires a deep understanding of quantum entanglement, its properties, and how it can be applied to cryptography. Therefore, I would label this query as 'difficult'.",
+    "choice": "difficult"
+  }
+]
+
+[Synalinks]
+Call ID: f0d80b69-150d-4ac4-9e69-430789361e89
+Parent call ID: 55bde61a-c47e-4e7b-a837-a61ccd671b6c
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "messages": [
+      {
+        "role": "system",
+        "content": "<instructions>\nYour task is to answer with a JSON containing the following keys: ['thinking', 'answer']\n</instructions>\n"
+      },
+      {
+        "role": "user",
+        "content": "<input>\n{'query': 'Explain the implications of quantum entanglement for cryptography', 'thinking': \"The query involves understanding complex concepts from both quantum physics and cryptography. It requires a deep understanding of quantum entanglement, its properties, and how it can be applied to cryptography. Therefore, I would label this query as 'difficult'.\", 'choice': 'difficult'}\n</input>\n<output>\n"
+      }
+    ]
+  }
+]
+
+[Synalinks]
+Call ID: f0d80b69-150d-4ac4-9e69-430789361e89
+Parent call ID: 55bde61a-c47e-4e7b-a837-a61ccd671b6c
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "thinking": "The query involves explaining the implications of quantum entanglement for cryptography, which requires a deep understanding of quantum physics and its applications in cryptography. Here's a simplified explanation: Quantum entanglement is a phenomenon where two or more particles become linked and the state of one particle can instantly affect the state of the other, no matter the distance between them. This property can be used in quantum cryptography to create unbreakable encryption. If someone tries to intercept the encrypted information, the act of measurement will change the state of the particles, which can be detected by the communicating parties. Therefore, any attempt at eavesdropping would be immediately apparent.",
+    "answer": "Quantum entanglement can be used in quantum cryptography to create unbreakable encryption. If someone tries to intercept the encrypted information, the act of measurement will change the state of the particles, which can be detected by the communicating parties."
+  }
+]
+
+[Synalinks]
+Call ID: 55bde61a-c47e-4e7b-a837-a61ccd671b6c
+Parent call ID: 7fb9cb5c-e9fe-4400-b5f5-951ebbbdb58f
+Module: Generator
+Module Name: generator_1
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "thinking": "The query involves explaining the implications of quantum entanglement for cryptography, which requires a deep understanding of quantum physics and its applications in cryptography. Here's a simplified explanation: Quantum entanglement is a phenomenon where two or more particles become linked and the state of one particle can instantly affect the state of the other, no matter the distance between them. This property can be used in quantum cryptography to create unbreakable encryption. If someone tries to intercept the encrypted information, the act of measurement will change the state of the particles, which can be detected by the communicating parties. Therefore, any attempt at eavesdropping would be immediately apparent.",
+    "answer": "Quantum entanglement can be used in quantum cryptography to create unbreakable encryption. If someone tries to intercept the encrypted information, the act of measurement will change the state of the particles, which can be detected by the communicating parties."
+  }
+]
+
+[Synalinks]
+Call ID: bd2e4419-cc88-4adf-a75e-03bebc41adf8
+Parent call ID: e4022d06-1fd6-424b-aa98-d7ffdc346bd7
+Module: Branch
+Module Name: branch
+Module Description: Use a `LanguageModel` to select which module(s) to call based on an
+Data Model JSON:
+[
+  {
+    "thinking": "The query involves explaining the implications of quantum entanglement for cryptography, which requires a deep understanding of quantum physics and its applications in cryptography. Here's a simplified explanation: Quantum entanglement is a phenomenon where two or more particles become linked and the state of one particle can instantly affect the state of the other, no matter the distance between them. This property can be used in quantum cryptography to create unbreakable encryption. If someone tries to intercept the encrypted information, the act of measurement will change the state of the particles, which can be detected by the communicating parties. Therefore, any attempt at eavesdropping would be immediately apparent.",
+    "answer": "Quantum entanglement can be used in quantum cryptography to create unbreakable encryption. If someone tries to intercept the encrypted information, the act of measurement will change the state of the particles, which can be detected by the communicating parties."
+  }
+]
+
+[Synalinks]
+Call ID: e4022d06-1fd6-424b-aa98-d7ffdc346bd7
+Parent call ID: None
+Module: Functional
+Module Name: adaptive_qa
+Module Description: Adapts response complexity to question difficulty
+Data Model JSON:
+[
+  {
+    "thinking": "The query involves explaining the implications of quantum entanglement for cryptography, which requires a deep understanding of quantum physics and its applications in cryptography. Here's a simplified explanation: Quantum entanglement is a phenomenon where two or more particles become linked and the state of one particle can instantly affect the state of the other, no matter the distance between them. This property can be used in quantum cryptography to create unbreakable encryption. If someone tries to intercept the encrypted information, the act of measurement will change the state of the particles, which can be detected by the communicating parties. Therefore, any attempt at eavesdropping would be immediately apparent.",
+    "answer": "Quantum entanglement can be used in quantum cryptography to create unbreakable encryption. If someone tries to intercept the encrypted information, the act of measurement will change the state of the particles, which can be detected by the communicating parties."
+  }
+]
+
+=== Easy Question ===
+{
+  "answer": "The sky is typically blue during the day."
+}
+
+=== Hard Question ===
+{
+  "thinking": "The query involves explaining the implications of quantum entanglement for cryptography, which requires a deep understanding of quantum physics and its applications in cryptography. Here's a simplified explanation: Quantum entanglement is a phenomenon where two or more particles become linked and the state of one particle can instantly affect the state of the other, no matter the distance between them. This property can be used in quantum cryptography to create unbreakable encryption. If someone tries to intercept the encrypted information, the act of measurement will change the state of the particles, which can be detected by the communicating parties. Therefore, any attempt at eavesdropping would be immediately apparent.",
+  "answer": "Quantum entanglement can be used in quantum cryptography to create unbreakable encryption. If someone tries to intercept the encrypted information, the act of measurement will change the state of the particles, which can be detected by the communicating parties."
+}

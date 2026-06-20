@@ -12,111 +12,121 @@ Claude Skills are customizable workflows that teach Claude how to perform specif
 
 The goal of Synalinks skills is to teach Claude to use the Synalinks framework correctly. Synalinks is Keras-inspired, so without guidance LMs tend to mix Keras / LangChain / DSPy syntax — producing plausible-looking but broken code. These skills constrain Claude to idiomatic Synalinks usage.
 
-## The 11 Skills
+## The `synalinks` skill
 
-Each skill targets one slice of the framework. Claude auto-activates the relevant skill(s) based on what you're asking about.
+This repo ships a **single skill**, `synalinks`, that covers the whole
+framework. Claude auto-activates it based on its `SKILL.md` `description`. The
+`SKILL.md` is a scannable overview, organized into one section per slice of the
+framework, each pointing to a runnable script (and its captured run log) and a
+deep-dive reference doc:
 
-| Skill | When it activates |
-|-------|-------------------|
-| **synalinks-core** | DataModel, Field, Input, JSON operators (`+ & \| ^ ~`), `synalinks.ops`, configuration, LanguageModel/EmbeddingModel basics |
-| **synalinks-programs** | Program class, four building APIs (Functional / Sequential / Subclassing / Mixed), multi-input/output graphs, build/call lifecycle, save/load, `summary`, `get_module`, `plot_program`, custom serialization |
-| **synalinks-modules** | Generator, ChainOfThought, SelfCritique, Identity, PythonSynthesis, SequentialPlanSynthesis, custom modules via subclassing |
-| **synalinks-control-flow** | Decision, Branch, parallel branches, self-consistency, XOR input/output guards, And/Or modules, branch merging |
-| **synalinks-agents** | FunctionCallingAgent, ToolCalling, Tool definitions, MCP integration (MultiServerMCPClient), trajectories |
-| **synalinks-knowledge** | KnowledgeBase (DuckDB), EmbedKnowledge, UpdateKnowledge, RetrieveKnowledge, RAG/KAG, hybrid search, Entity/Relation graphs |
-| **synalinks-training** | `compile()` / `fit()` / `evaluate()` / `predict()`, callbacks, ProgramCheckpoint, training workflow |
-| **synalinks-rewards** | ExactMatch, CosineSimilarity, LMAsJudge, ProgramAsJudge, MeanRewardWrapper, F1Score, custom rewards/metrics, masking |
-| **synalinks-optimizers** | RandomFewShot, OMEGA, Dominated Novelty Search, mutation/crossover, quality-diversity tuning |
-| **synalinks-providers** | Provider prefixes (openai, anthropic, groq, openrouter, cohere, deepseek, together_ai, bedrock, doubleword, hosted_vllm, ...), local servers (LMStudio/vLLM), OpenRouter embeddings |
-| **synalinks-datasets** | Built-in datasets (gsm8k, hotpotqa, arcagi), custom iterable datasets, visualization (`plot_program`, `plot_history`, `plot_metrics_*`) |
+| Section | What it covers |
+|---------|----------------|
+| **Core** | DataModel, Field, Input, JSON operators (`+ & \| ^ ~`), `synalinks.ops`, configuration, LanguageModel/EmbeddingModel basics |
+| **Programs** | Program class, four building APIs (Functional / Sequential / Subclassing / Mixed), multi-input/output graphs, build/call lifecycle, save/load, `summary`, `get_module`, `plot_program`, custom serialization |
+| **Modules** | Generator, ChainOfThought, SelfCritique, Identity, PythonSynthesis, SequentialPlanSynthesis, custom modules via subclassing |
+| **Control flow** | Decision, Branch, parallel branches, self-consistency, XOR input/output guards, And/Or modules, branch merging |
+| **Agents** | FunctionCallingAgent, RLM, DeepAgent, Tool definitions, MCP integration (MultiServerMCPClient), subagents, trajectories |
+| **Knowledge** | KnowledgeBase (DuckDB), EmbedKnowledge, UpdateKnowledge, RetrieveKnowledge, RAG/KAG, hybrid search, Entity/Relation graphs |
+| **Training** | `compile()` / `fit()` / `evaluate()` / `predict()`, callbacks, ProgramCheckpoint, training workflow |
+| **Rewards** | ExactMatch, CosineSimilarity, LMAsJudge, ProgramAsJudge, F1Score, custom rewards/metrics, masking |
+| **Optimizers** | RandomFewShot, OMEGA, Dominated Novelty Search, mutation/crossover, quality-diversity tuning |
+| **Providers** | Provider prefixes (openai, anthropic, groq, openrouter, cohere, deepseek, together_ai, bedrock, doubleword, hosted_vllm, ...), local OpenAI-compatible servers (LMStudio/vLLM/ollama), OpenAI-compatible setups (e.g. OpenRouter embeddings via `api_base`) |
+| **Datasets** | Built-in datasets (gsm8k, hotpotqa, arcagi), custom iterable datasets, visualization (`plot_program`, `plot_history`, `plot_metrics_*`) |
 
-Each skill folder contains:
-- `SKILL.md` — frontmatter + scannable usage guide
-- `references/` — deep-dive reference docs
-- `scripts/` — runnable example scripts
+The skill folder contains:
+- `SKILL.md` — frontmatter + scannable usage guide for the whole framework
+- `scripts/` — runnable example scripts (each docstring states its `Usage:` and `Run log:`)
+- `references/` — deep-dive reference docs plus the captured run logs (`*.log`)
 
 ## Install
 
-Clone the repository — every install path below copies, zips, or symlinks the
-`synalinks-*/` folders out of this checkout, so keep it somewhere stable.
+The recommended way to install this skill is the official
+[`skills`](https://skills.sh) CLI (`npx skills`). It clones this repo, discovers
+the `synalinks` skill, and wires it into your agent's skills directory —
+no manual cloning, copying, or zipping required. It needs Node.js (the `npx`
+that ships with it); nothing else.
+
+### Quick start (Claude Code)
+
+Install the skill, globally (available in all your projects):
 
 ```shell
-git clone https://github.com/SynaLinks/synalinks-skills.git
-cd synalinks-skills
+npx skills add SynaLinks/synalinks-skills --skill synalinks --global
 ```
 
-Pick one of the install targets below depending on where you use Claude.
-
-### Claude Code
-
-Skills live in one of two locations:
-
-| Scope | Path | When to use |
-|-------|------|-------------|
-| **User** (all projects) | `~/.claude/skills/` | You always want the skills available, regardless of which repo you're in. |
-| **Project** (one repo)  | `<repo>/.claude/skills/` | Limit the skills to a single Synalinks project; commit them with the repo so teammates pick them up automatically. |
-
-Install at the user level (recommended for solo use):
+Or install into the **current project only** (commit `.claude/skills/` so
+teammates pick it up automatically) — run from your project root:
 
 ```shell
-mkdir -p ~/.claude/skills/
-cp -r synalinks-* ~/.claude/skills/
+npx skills add SynaLinks/synalinks-skills --skill synalinks
 ```
 
-Or install for a single project:
+The CLI auto-detects Claude Code and installs to `~/.claude/skills/` (with
+`--global`) or `<repo>/.claude/skills/` (project scope, the default). By default
+it symlinks the skill; pass `--copy` to copy the files instead.
+
+List what's in the repo without installing anything:
 
 ```shell
-mkdir -p /path/to/your/synalinks-project/.claude/skills/
-cp -r synalinks-* /path/to/your/synalinks-project/.claude/skills/
+npx skills add SynaLinks/synalinks-skills --list
 ```
 
-> **Tip:** prefer `ln -s "$PWD"/synalinks-* ~/.claude/skills/` if you want
-> updates from `git pull` to flow through automatically.
+Run `npx skills add SynaLinks/synalinks-skills` with no flags for an
+interactive picker.
 
-Verify the install — start Claude Code and run the `/skills` slash command;
-the 11 `synalinks-*` skills should appear in the list. You can also peek at a
-skill's frontmatter directly:
+### Other agents
+
+The `skills` CLI supports 70+ agents. Target one (or all) explicitly with
+`-a`/`--agent`:
 
 ```shell
-head ~/.claude/skills/synalinks-core/SKILL.md
+npx skills add SynaLinks/synalinks-skills --skill synalinks -a claude-code   # one agent
+npx skills add SynaLinks/synalinks-skills --all                              # everything, all agents
 ```
 
-Claude auto-activates the relevant skill(s) for your task based on each
-`SKILL.md`'s `description` field — no manual selection needed.
+### Verify
+
+```shell
+npx skills list            # list installed skills
+```
+
+In Claude Code you can also run the `/skills` slash command — the `synalinks`
+skill should appear. Claude auto-activates it for your task based on its
+`SKILL.md` `description` field — no manual selection needed.
 
 ### Claude.ai (web) and Claude Desktop
 
-These uploads expect a single `.skill` archive (a zip of one skill folder
-with `SKILL.md` at the root). Build one archive per skill:
+Web/Desktop uploads expect a single `.skill` archive (a zip of the skill folder
+with `SKILL.md` at the root). Clone the repo and build the archive:
 
 ```shell
-for d in synalinks-*/; do zip -r "${d%/}.skill" "$d"; done
+git clone https://github.com/SynaLinks/synalinks-skills.git
+cd synalinks-skills/skills
+zip -r ../synalinks.skill synalinks
 ```
 
 Then in the Claude interface, click the skill icon (🧩), choose "Upload
-skill", and upload each `.skill` file. Repeat for every skill you want
-available. See [Using skills with Claude](https://support.claude.com/en/articles/12512180-using-skills-in-claude#h_c6008b84ad)
+skill", and upload the `.skill` file. See [Using skills with Claude](https://support.claude.com/en/articles/12512180-using-skills-in-claude#h_c6008b84ad)
 for the latest UI walkthrough.
 
 ## Updating
 
 ```shell
-cd synalinks-skills
-git pull
-cp -r synalinks-* ~/.claude/skills/    # if you copied (skip if you symlinked)
+npx skills update          # update all installed skills to the latest version
 ```
 
-For Claude.ai / Desktop, regenerate the `.skill` archives and re-upload the
-ones that changed. Restart Claude Code (or run `/skills` → reload) so the
-new metadata is picked up.
+Use `-g`/`--global` or `-p`/`--project` to scope the update. For
+Claude.ai / Desktop, regenerate the `.skill` archive and re-upload it.
 
 ## Uninstall
 
 ```shell
-rm -rf ~/.claude/skills/synalinks-*
+npx skills remove synalinks
 ```
 
-For Claude.ai / Desktop, remove each skill from the skill icon (🧩) menu.
+Add `-g`/`--global` to remove a globally-installed skill. For Claude.ai /
+Desktop, remove the skill from the skill icon (🧩) menu.
 
 # License
 

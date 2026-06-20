@@ -1,0 +1,151 @@
+[Synalinks]
+Call ID: ea67823a-ba9b-49b0-b348-e0756d601a23
+Parent call ID: None
+Module: SubclassedQA
+Module Name: subclassed_qa
+Module Description: Subclassed Q&A program
+Data Model JSON:
+[
+  {
+    "query": "What is the capital of France?"
+  }
+]
+
+[Synalinks]
+Call ID: 52da6383-078c-4222-a639-2b6e01336171
+Parent call ID: ea67823a-ba9b-49b0-b348-e0756d601a23
+Module: Generator
+Module Name: generator
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "query": "What is the capital of France?"
+  }
+]
+
+[Synalinks]
+Call ID: 3b7571c6-63ef-4f47-82b2-a571f1b403fb
+Parent call ID: 52da6383-078c-4222-a639-2b6e01336171
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "messages": [
+      {
+        "role": "system",
+        "content": "<instructions>\nYour task is to answer with a JSON containing the following keys: ['answer']\n</instructions>\n"
+      },
+      {
+        "role": "user",
+        "content": "<input>\n{'query': 'What is the capital of France?'}\n</input>\n<output>\n"
+      }
+    ]
+  }
+]
+
+[Synalinks]
+Call ID: 3b7571c6-63ef-4f47-82b2-a571f1b403fb
+Parent call ID: 52da6383-078c-4222-a639-2b6e01336171
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "answer": "Paris"
+  }
+]
+
+[Synalinks]
+Call ID: 52da6383-078c-4222-a639-2b6e01336171
+Parent call ID: ea67823a-ba9b-49b0-b348-e0756d601a23
+Module: Generator
+Module Name: generator
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "answer": "Paris"
+  }
+]
+
+[Synalinks]
+Call ID: b1c56ce6-2587-45cd-a859-89d31e5552ce
+Parent call ID: 3b7571c6-63ef-4f47-82b2-a571f1b403fb
+Module: Generator
+Module Name: generator
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "query": "What is the capital of France?"
+  }
+]
+
+[Synalinks]
+Call ID: e493d264-def6-4561-b07a-e04d68f911cf
+Parent call ID: b1c56ce6-2587-45cd-a859-89d31e5552ce
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "messages": [
+      {
+        "role": "system",
+        "content": "<instructions>\nYour task is to answer with a JSON containing the following keys: ['answer']\n</instructions>\n"
+      },
+      {
+        "role": "user",
+        "content": "<input>\n{'query': 'What is the capital of France?'}\n</input>\n<output>\n"
+      }
+    ]
+  }
+]
+
+[Synalinks]
+Call ID: e493d264-def6-4561-b07a-e04d68f911cf
+Parent call ID: b1c56ce6-2587-45cd-a859-89d31e5552ce
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "answer": "Paris"
+  }
+]
+
+[Synalinks]
+Call ID: b1c56ce6-2587-45cd-a859-89d31e5552ce
+Parent call ID: 3b7571c6-63ef-4f47-82b2-a571f1b403fb
+Module: Generator
+Module Name: generator
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "answer": "Paris"
+  }
+]
+
+[Synalinks]
+Call ID: ea67823a-ba9b-49b0-b348-e0756d601a23
+Parent call ID: None
+Module: SubclassedQA
+Module Name: subclassed_qa
+Module Description: Subclassed Q&A program
+Data Model JSON:
+[
+  {
+    "answer": "Paris"
+  }
+]
+
+{
+  "answer": "Paris"
+}

@@ -1,0 +1,142 @@
+(DEBUG) [Synalinks]
+Call ID: 250b195a-fdb5-4650-bccd-97aca8455383
+Parent call ID: None
+Module: Generator
+Module Name: generator
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "description": "Input data model.",
+    "properties": {
+      "query": {
+        "description": "The user query",
+        "title": "Query",
+        "type": "string"
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "title": "Query",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 250b195a-fdb5-4650-bccd-97aca8455383
+Parent call ID: None
+Module: Generator
+Module Name: generator
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "description": "Output data model.",
+    "properties": {
+      "answer": {
+        "description": "The answer to the query",
+        "title": "Answer",
+        "type": "string"
+      }
+    },
+    "required": [
+      "answer"
+    ],
+    "title": "Answer",
+    "type": "object"
+  }
+]
+
+[Synalinks]
+Call ID: 063a3653-6a42-49eb-a922-7837fd5b027a
+Parent call ID: None
+Module: Functional
+Module Name: simple_qa
+Module Description: A simple question-answering program
+Data Model JSON:
+[
+  {
+    "query": "What is the capital of France?"
+  }
+]
+
+[Synalinks]
+Call ID: 5b15eed7-755b-4ce0-af1f-5ef22629fa13
+Parent call ID: 063a3653-6a42-49eb-a922-7837fd5b027a
+Module: Generator
+Module Name: generator
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "query": "What is the capital of France?"
+  }
+]
+
+[Synalinks]
+Call ID: d2f617c4-954d-43d4-835e-52d5d58b4fa1
+Parent call ID: 5b15eed7-755b-4ce0-af1f-5ef22629fa13
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "messages": [
+      {
+        "role": "system",
+        "content": "<instructions>\nYour task is to answer with a JSON containing the following keys: ['answer']\n</instructions>\n"
+      },
+      {
+        "role": "user",
+        "content": "<input>\n{'query': 'What is the capital of France?'}\n</input>\n<output>\n"
+      }
+    ]
+  }
+]
+
+[Synalinks]
+Call ID: d2f617c4-954d-43d4-835e-52d5d58b4fa1
+Parent call ID: 5b15eed7-755b-4ce0-af1f-5ef22629fa13
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "answer": "Paris"
+  }
+]
+
+[Synalinks]
+Call ID: 5b15eed7-755b-4ce0-af1f-5ef22629fa13
+Parent call ID: 063a3653-6a42-49eb-a922-7837fd5b027a
+Module: Generator
+Module Name: generator
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "answer": "Paris"
+  }
+]
+
+[Synalinks]
+Call ID: 063a3653-6a42-49eb-a922-7837fd5b027a
+Parent call ID: None
+Module: Functional
+Module Name: simple_qa
+Module Description: A simple question-answering program
+Data Model JSON:
+[
+  {
+    "answer": "Paris"
+  }
+]
+
+{
+  "answer": "Paris"
+}

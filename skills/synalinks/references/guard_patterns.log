@@ -1,0 +1,1751 @@
+(DEBUG) [Synalinks]
+Call ID: d25a596c-7f75-49ae-a032-62b1e78a030e
+Parent call ID: None
+Module: ConversationalInputGuard
+Module Name: conversational_input_guard
+Module Description: Input guard that blocks messages containing blacklisted words.
+Data Model JSON Schema:
+[
+  {
+    "$defs": {
+      "ChatMessage": {
+        "additionalProperties": false,
+        "description": "A chat message",
+        "properties": {
+          "role": {
+            "$ref": "#/$defs/ChatRole",
+            "description": "The chat message role"
+          },
+          "reasoning_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The reasoning/thinking content of the message. Keyed to match the litellm/DeepSeek `reasoning_content` chat-completion field (a provider extension, not part of the base OpenAI spec), so the message API stays a subset of the litellm-extended chat-completion message.",
+            "title": "Reasoning Content"
+          },
+          "thinking_blocks": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Opaque provider-native thinking blocks (e.g. Anthropic's signed `thinking_blocks`; a litellm extension, not part of the base OpenAI spec). Carried through verbatim on assistant-message re-injection so multi-turn tool-use round-trips preserve signatures. None for providers that emit reasoning only as text.",
+            "title": "Thinking Blocks"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The content of the message",
+            "title": "Content"
+          },
+          "tool_call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The id of the tool call if role is `tool`",
+            "title": "Tool Call Id"
+          },
+          "tool_calls": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/$defs/ToolCall"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The tool calls of the agent",
+            "title": "Tool Calls"
+          }
+        },
+        "required": [
+          "role"
+        ],
+        "title": "ChatMessage",
+        "type": "object"
+      },
+      "ChatRole": {
+        "description": "The chat message roles",
+        "enum": [
+          "system",
+          "developer",
+          "user",
+          "assistant",
+          "tool",
+          "function"
+        ],
+        "title": "ChatRole",
+        "type": "string"
+      },
+      "ToolCall": {
+        "additionalProperties": false,
+        "description": "A tool call, shaped like an OpenAI Chat Completions tool call.\n\nMirrors the wire envelope (`{id, type, function: {name, arguments}}`)\nexcept that `arguments` stays a parsed dict rather than a JSON-encoded\nstring, so modules and agents can read it directly. The string encoding\nis applied only at the wire edge (see `backend.pydantic.chat_completions`).",
+        "properties": {
+          "id": {
+            "description": "The id of the tool call",
+            "title": "Id",
+            "type": "string"
+          },
+          "type": {
+            "const": "function",
+            "default": "function",
+            "description": "The tool call type (always `function` today)",
+            "title": "Type",
+            "type": "string"
+          },
+          "function": {
+            "$ref": "#/$defs/ToolCallFunction",
+            "description": "The function invocation (name + arguments)"
+          }
+        },
+        "required": [
+          "id",
+          "function"
+        ],
+        "title": "ToolCall",
+        "type": "object"
+      },
+      "ToolCallFunction": {
+        "additionalProperties": false,
+        "description": "The `function` payload of a tool call (name + parsed arguments).",
+        "properties": {
+          "name": {
+            "description": "The name of the function called",
+            "title": "Name",
+            "type": "string"
+          },
+          "arguments": {
+            "additionalProperties": true,
+            "description": "The arguments of the tool call",
+            "title": "Arguments",
+            "type": "object"
+          }
+        },
+        "required": [
+          "name",
+          "arguments"
+        ],
+        "title": "ToolCallFunction",
+        "type": "object"
+      }
+    },
+    "additionalProperties": false,
+    "description": "A list of chat messages",
+    "properties": {
+      "messages": {
+        "default": [],
+        "description": "The list of chat messages",
+        "items": {
+          "$ref": "#/$defs/ChatMessage"
+        },
+        "title": "Messages",
+        "type": "array"
+      }
+    },
+    "title": "ChatMessages",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: d25a596c-7f75-49ae-a032-62b1e78a030e
+Parent call ID: None
+Module: ConversationalInputGuard
+Module Name: conversational_input_guard
+Module Description: Input guard that blocks messages containing blacklisted words.
+Data Model JSON Schema:
+[
+  {
+    "$defs": {
+      "ChatRole": {
+        "description": "The chat message roles",
+        "enum": [
+          "system",
+          "developer",
+          "user",
+          "assistant",
+          "tool",
+          "function"
+        ],
+        "title": "ChatRole",
+        "type": "string"
+      },
+      "ToolCall": {
+        "additionalProperties": false,
+        "description": "A tool call, shaped like an OpenAI Chat Completions tool call.\n\nMirrors the wire envelope (`{id, type, function: {name, arguments}}`)\nexcept that `arguments` stays a parsed dict rather than a JSON-encoded\nstring, so modules and agents can read it directly. The string encoding\nis applied only at the wire edge (see `backend.pydantic.chat_completions`).",
+        "properties": {
+          "id": {
+            "description": "The id of the tool call",
+            "title": "Id",
+            "type": "string"
+          },
+          "type": {
+            "const": "function",
+            "default": "function",
+            "description": "The tool call type (always `function` today)",
+            "title": "Type",
+            "type": "string"
+          },
+          "function": {
+            "$ref": "#/$defs/ToolCallFunction",
+            "description": "The function invocation (name + arguments)"
+          }
+        },
+        "required": [
+          "id",
+          "function"
+        ],
+        "title": "ToolCall",
+        "type": "object"
+      },
+      "ToolCallFunction": {
+        "additionalProperties": false,
+        "description": "The `function` payload of a tool call (name + parsed arguments).",
+        "properties": {
+          "name": {
+            "description": "The name of the function called",
+            "title": "Name",
+            "type": "string"
+          },
+          "arguments": {
+            "additionalProperties": true,
+            "description": "The arguments of the tool call",
+            "title": "Arguments",
+            "type": "object"
+          }
+        },
+        "required": [
+          "name",
+          "arguments"
+        ],
+        "title": "ToolCallFunction",
+        "type": "object"
+      }
+    },
+    "additionalProperties": false,
+    "description": "A chat message",
+    "properties": {
+      "role": {
+        "$ref": "#/$defs/ChatRole",
+        "description": "The chat message role"
+      },
+      "reasoning_content": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The reasoning/thinking content of the message. Keyed to match the litellm/DeepSeek `reasoning_content` chat-completion field (a provider extension, not part of the base OpenAI spec), so the message API stays a subset of the litellm-extended chat-completion message.",
+        "title": "Reasoning Content"
+      },
+      "thinking_blocks": {
+        "anyOf": [
+          {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Opaque provider-native thinking blocks (e.g. Anthropic's signed `thinking_blocks`; a litellm extension, not part of the base OpenAI spec). Carried through verbatim on assistant-message re-injection so multi-turn tool-use round-trips preserve signatures. None for providers that emit reasoning only as text.",
+        "title": "Thinking Blocks"
+      },
+      "content": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The content of the message",
+        "title": "Content"
+      },
+      "tool_call_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The id of the tool call if role is `tool`",
+        "title": "Tool Call Id"
+      },
+      "tool_calls": {
+        "anyOf": [
+          {
+            "items": {
+              "$ref": "#/$defs/ToolCall"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The tool calls of the agent",
+        "title": "Tool Calls"
+      }
+    },
+    "required": [
+      "role"
+    ],
+    "title": "ChatMessage",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: f6cacb07-7e6b-465d-bf6d-73d8b48f73e9
+Parent call ID: None
+Module: Generator
+Module Name: generator
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "$defs": {
+      "ChatRole": {
+        "description": "The chat message roles",
+        "enum": [
+          "system",
+          "developer",
+          "user",
+          "assistant",
+          "tool",
+          "function"
+        ],
+        "title": "ChatRole",
+        "type": "string"
+      },
+      "ToolCall": {
+        "additionalProperties": false,
+        "description": "A tool call, shaped like an OpenAI Chat Completions tool call.\n\nMirrors the wire envelope (`{id, type, function: {name, arguments}}`)\nexcept that `arguments` stays a parsed dict rather than a JSON-encoded\nstring, so modules and agents can read it directly. The string encoding\nis applied only at the wire edge (see `backend.pydantic.chat_completions`).",
+        "properties": {
+          "id": {
+            "description": "The id of the tool call",
+            "title": "Id",
+            "type": "string"
+          },
+          "type": {
+            "const": "function",
+            "default": "function",
+            "description": "The tool call type (always `function` today)",
+            "title": "Type",
+            "type": "string"
+          },
+          "function": {
+            "$ref": "#/$defs/ToolCallFunction",
+            "description": "The function invocation (name + arguments)"
+          }
+        },
+        "required": [
+          "id",
+          "function"
+        ],
+        "title": "ToolCall",
+        "type": "object"
+      },
+      "ToolCallFunction": {
+        "additionalProperties": false,
+        "description": "The `function` payload of a tool call (name + parsed arguments).",
+        "properties": {
+          "name": {
+            "description": "The name of the function called",
+            "title": "Name",
+            "type": "string"
+          },
+          "arguments": {
+            "additionalProperties": true,
+            "description": "The arguments of the tool call",
+            "title": "Arguments",
+            "type": "object"
+          }
+        },
+        "required": [
+          "name",
+          "arguments"
+        ],
+        "title": "ToolCallFunction",
+        "type": "object"
+      }
+    },
+    "additionalProperties": false,
+    "description": "A chat message",
+    "properties": {
+      "role": {
+        "$ref": "#/$defs/ChatRole",
+        "description": "The chat message role"
+      },
+      "reasoning_content": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The reasoning/thinking content of the message. Keyed to match the litellm/DeepSeek `reasoning_content` chat-completion field (a provider extension, not part of the base OpenAI spec), so the message API stays a subset of the litellm-extended chat-completion message.",
+        "title": "Reasoning Content"
+      },
+      "thinking_blocks": {
+        "anyOf": [
+          {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Opaque provider-native thinking blocks (e.g. Anthropic's signed `thinking_blocks`; a litellm extension, not part of the base OpenAI spec). Carried through verbatim on assistant-message re-injection so multi-turn tool-use round-trips preserve signatures. None for providers that emit reasoning only as text.",
+        "title": "Thinking Blocks"
+      },
+      "content": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The content of the message",
+        "title": "Content"
+      },
+      "tool_call_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The id of the tool call if role is `tool`",
+        "title": "Tool Call Id"
+      },
+      "tool_calls": {
+        "anyOf": [
+          {
+            "items": {
+              "$ref": "#/$defs/ToolCall"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The tool calls of the agent",
+        "title": "Tool Calls"
+      }
+    },
+    "required": [
+      "role"
+    ],
+    "title": "ChatMessage",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: f6cacb07-7e6b-465d-bf6d-73d8b48f73e9
+Parent call ID: None
+Module: Generator
+Module Name: generator
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "$defs": {
+      "ChatRole": {
+        "description": "The chat message roles",
+        "enum": [
+          "system",
+          "developer",
+          "user",
+          "assistant",
+          "tool",
+          "function"
+        ],
+        "title": "ChatRole",
+        "type": "string"
+      },
+      "ToolCall": {
+        "additionalProperties": false,
+        "description": "A tool call, shaped like an OpenAI Chat Completions tool call.\n\nMirrors the wire envelope (`{id, type, function: {name, arguments}}`)\nexcept that `arguments` stays a parsed dict rather than a JSON-encoded\nstring, so modules and agents can read it directly. The string encoding\nis applied only at the wire edge (see `backend.pydantic.chat_completions`).",
+        "properties": {
+          "id": {
+            "description": "The id of the tool call",
+            "title": "Id",
+            "type": "string"
+          },
+          "type": {
+            "const": "function",
+            "default": "function",
+            "description": "The tool call type (always `function` today)",
+            "title": "Type",
+            "type": "string"
+          },
+          "function": {
+            "$ref": "#/$defs/ToolCallFunction",
+            "description": "The function invocation (name + arguments)"
+          }
+        },
+        "required": [
+          "id",
+          "function"
+        ],
+        "title": "ToolCall",
+        "type": "object"
+      },
+      "ToolCallFunction": {
+        "additionalProperties": false,
+        "description": "The `function` payload of a tool call (name + parsed arguments).",
+        "properties": {
+          "name": {
+            "description": "The name of the function called",
+            "title": "Name",
+            "type": "string"
+          },
+          "arguments": {
+            "additionalProperties": true,
+            "description": "The arguments of the tool call",
+            "title": "Arguments",
+            "type": "object"
+          }
+        },
+        "required": [
+          "name",
+          "arguments"
+        ],
+        "title": "ToolCallFunction",
+        "type": "object"
+      }
+    },
+    "additionalProperties": false,
+    "description": "A chat message",
+    "properties": {
+      "role": {
+        "$ref": "#/$defs/ChatRole",
+        "description": "The chat message role"
+      },
+      "reasoning_content": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The reasoning/thinking content of the message. Keyed to match the litellm/DeepSeek `reasoning_content` chat-completion field (a provider extension, not part of the base OpenAI spec), so the message API stays a subset of the litellm-extended chat-completion message.",
+        "title": "Reasoning Content"
+      },
+      "thinking_blocks": {
+        "anyOf": [
+          {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Opaque provider-native thinking blocks (e.g. Anthropic's signed `thinking_blocks`; a litellm extension, not part of the base OpenAI spec). Carried through verbatim on assistant-message re-injection so multi-turn tool-use round-trips preserve signatures. None for providers that emit reasoning only as text.",
+        "title": "Thinking Blocks"
+      },
+      "content": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The content of the message",
+        "title": "Content"
+      },
+      "tool_call_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The id of the tool call if role is `tool`",
+        "title": "Tool Call Id"
+      },
+      "tool_calls": {
+        "anyOf": [
+          {
+            "items": {
+              "$ref": "#/$defs/ToolCall"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The tool calls of the agent",
+        "title": "Tool Calls"
+      }
+    },
+    "required": [
+      "role"
+    ],
+    "title": "ChatMessage",
+    "type": "object"
+  }
+]
+
+[Synalinks]
+Call ID: 53affb7b-0441-44de-b374-80d39536b1c8
+Parent call ID: None
+Module: Functional
+Module Name: input_guarded_chatbot
+Module Description: A chatbot with input guard
+Data Model JSON:
+[
+  {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Tell me about forbidden topics"
+      }
+    ]
+  }
+]
+
+[Synalinks]
+Call ID: 11ca60b3-590f-4b10-9df1-f74ef0843a53
+Parent call ID: 53affb7b-0441-44de-b374-80d39536b1c8
+Module: ConversationalInputGuard
+Module Name: conversational_input_guard
+Module Description: Input guard that blocks messages containing blacklisted words.
+Data Model JSON:
+[
+  {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Tell me about forbidden topics"
+      }
+    ]
+  }
+]
+
+[Synalinks]
+Call ID: 11ca60b3-590f-4b10-9df1-f74ef0843a53
+Parent call ID: 53affb7b-0441-44de-b374-80d39536b1c8
+Module: ConversationalInputGuard
+Module Name: conversational_input_guard
+Module Description: Input guard that blocks messages containing blacklisted words.
+Data Model JSON:
+[
+  {
+    "role": "assistant",
+    "content": "I'm unable to comply with your request"
+  }
+]
+
+[Synalinks]
+Call ID: 53affb7b-0441-44de-b374-80d39536b1c8
+Parent call ID: None
+Module: Functional
+Module Name: input_guarded_chatbot
+Module Description: A chatbot with input guard
+Data Model JSON:
+[
+  {
+    "role": "assistant",
+    "content": "I'm unable to comply with your request"
+  }
+]
+
+[Synalinks]
+Call ID: 126e079c-b4a0-42fa-8871-658718747442
+Parent call ID: None
+Module: Functional
+Module Name: input_guarded_chatbot
+Module Description: A chatbot with input guard
+Data Model JSON:
+[
+  {
+    "messages": [
+      {
+        "role": "user",
+        "content": "What is the capital of France?"
+      }
+    ]
+  }
+]
+
+[Synalinks]
+Call ID: 1232a0fb-5d08-4832-a5ab-d8e32d531e4a
+Parent call ID: 126e079c-b4a0-42fa-8871-658718747442
+Module: ConversationalInputGuard
+Module Name: conversational_input_guard
+Module Description: Input guard that blocks messages containing blacklisted words.
+Data Model JSON:
+[
+  {
+    "messages": [
+      {
+        "role": "user",
+        "content": "What is the capital of France?"
+      }
+    ]
+  }
+]
+
+[Synalinks]
+Call ID: 07c47abf-3244-43d7-b053-53e675693c2d
+Parent call ID: 1232a0fb-5d08-4832-a5ab-d8e32d531e4a
+Module: Generator
+Module Name: generator
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "messages": [
+      {
+        "role": "user",
+        "content": "What is the capital of France?"
+      }
+    ]
+  }
+]
+
+[Synalinks]
+Call ID: 63147852-770d-4c2b-b7a1-c2e089932bb0
+Parent call ID: 07c47abf-3244-43d7-b053-53e675693c2d
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "messages": [
+      {
+        "role": "system",
+        "content": "<instructions>\nNone\n</instructions>\n"
+      },
+      {
+        "role": "user",
+        "content": "What is the capital of France?"
+      }
+    ]
+  }
+]
+
+[Synalinks]
+Call ID: 63147852-770d-4c2b-b7a1-c2e089932bb0
+Parent call ID: 07c47abf-3244-43d7-b053-53e675693c2d
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "role": "assistant",
+    "content": "The capital of France is Paris."
+  }
+]
+
+[Synalinks]
+Call ID: 07c47abf-3244-43d7-b053-53e675693c2d
+Parent call ID: 1232a0fb-5d08-4832-a5ab-d8e32d531e4a
+Module: Generator
+Module Name: generator
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "role": "assistant",
+    "content": "The capital of France is Paris."
+  }
+]
+
+[Synalinks]
+Call ID: 126e079c-b4a0-42fa-8871-658718747442
+Parent call ID: None
+Module: Functional
+Module Name: input_guarded_chatbot
+Module Description: A chatbot with input guard
+Data Model JSON:
+[
+  {
+    "role": "assistant",
+    "content": "The capital of France is Paris."
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 652209f0-82e0-4c37-8e3d-66eba091287c
+Parent call ID: None
+Module: Generator
+Module Name: generator_1
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "$defs": {
+      "ChatMessage": {
+        "additionalProperties": false,
+        "description": "A chat message",
+        "properties": {
+          "role": {
+            "$ref": "#/$defs/ChatRole",
+            "description": "The chat message role"
+          },
+          "reasoning_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The reasoning/thinking content of the message. Keyed to match the litellm/DeepSeek `reasoning_content` chat-completion field (a provider extension, not part of the base OpenAI spec), so the message API stays a subset of the litellm-extended chat-completion message.",
+            "title": "Reasoning Content"
+          },
+          "thinking_blocks": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Opaque provider-native thinking blocks (e.g. Anthropic's signed `thinking_blocks`; a litellm extension, not part of the base OpenAI spec). Carried through verbatim on assistant-message re-injection so multi-turn tool-use round-trips preserve signatures. None for providers that emit reasoning only as text.",
+            "title": "Thinking Blocks"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The content of the message",
+            "title": "Content"
+          },
+          "tool_call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The id of the tool call if role is `tool`",
+            "title": "Tool Call Id"
+          },
+          "tool_calls": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/$defs/ToolCall"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The tool calls of the agent",
+            "title": "Tool Calls"
+          }
+        },
+        "required": [
+          "role"
+        ],
+        "title": "ChatMessage",
+        "type": "object"
+      },
+      "ChatRole": {
+        "description": "The chat message roles",
+        "enum": [
+          "system",
+          "developer",
+          "user",
+          "assistant",
+          "tool",
+          "function"
+        ],
+        "title": "ChatRole",
+        "type": "string"
+      },
+      "ToolCall": {
+        "additionalProperties": false,
+        "description": "A tool call, shaped like an OpenAI Chat Completions tool call.\n\nMirrors the wire envelope (`{id, type, function: {name, arguments}}`)\nexcept that `arguments` stays a parsed dict rather than a JSON-encoded\nstring, so modules and agents can read it directly. The string encoding\nis applied only at the wire edge (see `backend.pydantic.chat_completions`).",
+        "properties": {
+          "id": {
+            "description": "The id of the tool call",
+            "title": "Id",
+            "type": "string"
+          },
+          "type": {
+            "const": "function",
+            "default": "function",
+            "description": "The tool call type (always `function` today)",
+            "title": "Type",
+            "type": "string"
+          },
+          "function": {
+            "$ref": "#/$defs/ToolCallFunction",
+            "description": "The function invocation (name + arguments)"
+          }
+        },
+        "required": [
+          "id",
+          "function"
+        ],
+        "title": "ToolCall",
+        "type": "object"
+      },
+      "ToolCallFunction": {
+        "additionalProperties": false,
+        "description": "The `function` payload of a tool call (name + parsed arguments).",
+        "properties": {
+          "name": {
+            "description": "The name of the function called",
+            "title": "Name",
+            "type": "string"
+          },
+          "arguments": {
+            "additionalProperties": true,
+            "description": "The arguments of the tool call",
+            "title": "Arguments",
+            "type": "object"
+          }
+        },
+        "required": [
+          "name",
+          "arguments"
+        ],
+        "title": "ToolCallFunction",
+        "type": "object"
+      }
+    },
+    "additionalProperties": false,
+    "description": "A list of chat messages",
+    "properties": {
+      "messages": {
+        "default": [],
+        "description": "The list of chat messages",
+        "items": {
+          "$ref": "#/$defs/ChatMessage"
+        },
+        "title": "Messages",
+        "type": "array"
+      }
+    },
+    "title": "ChatMessages",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 652209f0-82e0-4c37-8e3d-66eba091287c
+Parent call ID: None
+Module: Generator
+Module Name: generator_1
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "$defs": {
+      "ChatRole": {
+        "description": "The chat message roles",
+        "enum": [
+          "system",
+          "developer",
+          "user",
+          "assistant",
+          "tool",
+          "function"
+        ],
+        "title": "ChatRole",
+        "type": "string"
+      },
+      "ToolCall": {
+        "additionalProperties": false,
+        "description": "A tool call, shaped like an OpenAI Chat Completions tool call.\n\nMirrors the wire envelope (`{id, type, function: {name, arguments}}`)\nexcept that `arguments` stays a parsed dict rather than a JSON-encoded\nstring, so modules and agents can read it directly. The string encoding\nis applied only at the wire edge (see `backend.pydantic.chat_completions`).",
+        "properties": {
+          "id": {
+            "description": "The id of the tool call",
+            "title": "Id",
+            "type": "string"
+          },
+          "type": {
+            "const": "function",
+            "default": "function",
+            "description": "The tool call type (always `function` today)",
+            "title": "Type",
+            "type": "string"
+          },
+          "function": {
+            "$ref": "#/$defs/ToolCallFunction",
+            "description": "The function invocation (name + arguments)"
+          }
+        },
+        "required": [
+          "id",
+          "function"
+        ],
+        "title": "ToolCall",
+        "type": "object"
+      },
+      "ToolCallFunction": {
+        "additionalProperties": false,
+        "description": "The `function` payload of a tool call (name + parsed arguments).",
+        "properties": {
+          "name": {
+            "description": "The name of the function called",
+            "title": "Name",
+            "type": "string"
+          },
+          "arguments": {
+            "additionalProperties": true,
+            "description": "The arguments of the tool call",
+            "title": "Arguments",
+            "type": "object"
+          }
+        },
+        "required": [
+          "name",
+          "arguments"
+        ],
+        "title": "ToolCallFunction",
+        "type": "object"
+      }
+    },
+    "additionalProperties": false,
+    "description": "A chat message",
+    "properties": {
+      "role": {
+        "$ref": "#/$defs/ChatRole",
+        "description": "The chat message role"
+      },
+      "reasoning_content": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The reasoning/thinking content of the message. Keyed to match the litellm/DeepSeek `reasoning_content` chat-completion field (a provider extension, not part of the base OpenAI spec), so the message API stays a subset of the litellm-extended chat-completion message.",
+        "title": "Reasoning Content"
+      },
+      "thinking_blocks": {
+        "anyOf": [
+          {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Opaque provider-native thinking blocks (e.g. Anthropic's signed `thinking_blocks`; a litellm extension, not part of the base OpenAI spec). Carried through verbatim on assistant-message re-injection so multi-turn tool-use round-trips preserve signatures. None for providers that emit reasoning only as text.",
+        "title": "Thinking Blocks"
+      },
+      "content": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The content of the message",
+        "title": "Content"
+      },
+      "tool_call_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The id of the tool call if role is `tool`",
+        "title": "Tool Call Id"
+      },
+      "tool_calls": {
+        "anyOf": [
+          {
+            "items": {
+              "$ref": "#/$defs/ToolCall"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The tool calls of the agent",
+        "title": "Tool Calls"
+      }
+    },
+    "required": [
+      "role"
+    ],
+    "title": "ChatMessage",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 6c8609a1-6606-4745-a161-b88b05e66073
+Parent call ID: None
+Module: ConversationalOutputGuard
+Module Name: conversational_output_guard
+Module Description: Output guard that replaces responses containing blacklisted words.
+Data Model JSON Schema:
+[
+  {
+    "$defs": {
+      "ChatRole": {
+        "description": "The chat message roles",
+        "enum": [
+          "system",
+          "developer",
+          "user",
+          "assistant",
+          "tool",
+          "function"
+        ],
+        "title": "ChatRole",
+        "type": "string"
+      },
+      "ToolCall": {
+        "additionalProperties": false,
+        "description": "A tool call, shaped like an OpenAI Chat Completions tool call.\n\nMirrors the wire envelope (`{id, type, function: {name, arguments}}`)\nexcept that `arguments` stays a parsed dict rather than a JSON-encoded\nstring, so modules and agents can read it directly. The string encoding\nis applied only at the wire edge (see `backend.pydantic.chat_completions`).",
+        "properties": {
+          "id": {
+            "description": "The id of the tool call",
+            "title": "Id",
+            "type": "string"
+          },
+          "type": {
+            "const": "function",
+            "default": "function",
+            "description": "The tool call type (always `function` today)",
+            "title": "Type",
+            "type": "string"
+          },
+          "function": {
+            "$ref": "#/$defs/ToolCallFunction",
+            "description": "The function invocation (name + arguments)"
+          }
+        },
+        "required": [
+          "id",
+          "function"
+        ],
+        "title": "ToolCall",
+        "type": "object"
+      },
+      "ToolCallFunction": {
+        "additionalProperties": false,
+        "description": "The `function` payload of a tool call (name + parsed arguments).",
+        "properties": {
+          "name": {
+            "description": "The name of the function called",
+            "title": "Name",
+            "type": "string"
+          },
+          "arguments": {
+            "additionalProperties": true,
+            "description": "The arguments of the tool call",
+            "title": "Arguments",
+            "type": "object"
+          }
+        },
+        "required": [
+          "name",
+          "arguments"
+        ],
+        "title": "ToolCallFunction",
+        "type": "object"
+      }
+    },
+    "additionalProperties": false,
+    "description": "A chat message",
+    "properties": {
+      "role": {
+        "$ref": "#/$defs/ChatRole",
+        "description": "The chat message role"
+      },
+      "reasoning_content": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The reasoning/thinking content of the message. Keyed to match the litellm/DeepSeek `reasoning_content` chat-completion field (a provider extension, not part of the base OpenAI spec), so the message API stays a subset of the litellm-extended chat-completion message.",
+        "title": "Reasoning Content"
+      },
+      "thinking_blocks": {
+        "anyOf": [
+          {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Opaque provider-native thinking blocks (e.g. Anthropic's signed `thinking_blocks`; a litellm extension, not part of the base OpenAI spec). Carried through verbatim on assistant-message re-injection so multi-turn tool-use round-trips preserve signatures. None for providers that emit reasoning only as text.",
+        "title": "Thinking Blocks"
+      },
+      "content": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The content of the message",
+        "title": "Content"
+      },
+      "tool_call_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The id of the tool call if role is `tool`",
+        "title": "Tool Call Id"
+      },
+      "tool_calls": {
+        "anyOf": [
+          {
+            "items": {
+              "$ref": "#/$defs/ToolCall"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The tool calls of the agent",
+        "title": "Tool Calls"
+      }
+    },
+    "required": [
+      "role"
+    ],
+    "title": "ChatMessage",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 6c8609a1-6606-4745-a161-b88b05e66073
+Parent call ID: None
+Module: ConversationalOutputGuard
+Module Name: conversational_output_guard
+Module Description: Output guard that replaces responses containing blacklisted words.
+Data Model JSON Schema:
+[
+  {
+    "$defs": {
+      "ChatRole": {
+        "description": "The chat message roles",
+        "enum": [
+          "system",
+          "developer",
+          "user",
+          "assistant",
+          "tool",
+          "function"
+        ],
+        "title": "ChatRole",
+        "type": "string"
+      },
+      "ToolCall": {
+        "additionalProperties": false,
+        "description": "A tool call, shaped like an OpenAI Chat Completions tool call.\n\nMirrors the wire envelope (`{id, type, function: {name, arguments}}`)\nexcept that `arguments` stays a parsed dict rather than a JSON-encoded\nstring, so modules and agents can read it directly. The string encoding\nis applied only at the wire edge (see `backend.pydantic.chat_completions`).",
+        "properties": {
+          "id": {
+            "description": "The id of the tool call",
+            "title": "Id",
+            "type": "string"
+          },
+          "type": {
+            "const": "function",
+            "default": "function",
+            "description": "The tool call type (always `function` today)",
+            "title": "Type",
+            "type": "string"
+          },
+          "function": {
+            "$ref": "#/$defs/ToolCallFunction",
+            "description": "The function invocation (name + arguments)"
+          }
+        },
+        "required": [
+          "id",
+          "function"
+        ],
+        "title": "ToolCall",
+        "type": "object"
+      },
+      "ToolCallFunction": {
+        "additionalProperties": false,
+        "description": "The `function` payload of a tool call (name + parsed arguments).",
+        "properties": {
+          "name": {
+            "description": "The name of the function called",
+            "title": "Name",
+            "type": "string"
+          },
+          "arguments": {
+            "additionalProperties": true,
+            "description": "The arguments of the tool call",
+            "title": "Arguments",
+            "type": "object"
+          }
+        },
+        "required": [
+          "name",
+          "arguments"
+        ],
+        "title": "ToolCallFunction",
+        "type": "object"
+      }
+    },
+    "additionalProperties": false,
+    "description": "A chat message",
+    "properties": {
+      "role": {
+        "$ref": "#/$defs/ChatRole",
+        "description": "The chat message role"
+      },
+      "reasoning_content": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The reasoning/thinking content of the message. Keyed to match the litellm/DeepSeek `reasoning_content` chat-completion field (a provider extension, not part of the base OpenAI spec), so the message API stays a subset of the litellm-extended chat-completion message.",
+        "title": "Reasoning Content"
+      },
+      "thinking_blocks": {
+        "anyOf": [
+          {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Opaque provider-native thinking blocks (e.g. Anthropic's signed `thinking_blocks`; a litellm extension, not part of the base OpenAI spec). Carried through verbatim on assistant-message re-injection so multi-turn tool-use round-trips preserve signatures. None for providers that emit reasoning only as text.",
+        "title": "Thinking Blocks"
+      },
+      "content": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The content of the message",
+        "title": "Content"
+      },
+      "tool_call_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The id of the tool call if role is `tool`",
+        "title": "Tool Call Id"
+      },
+      "tool_calls": {
+        "anyOf": [
+          {
+            "items": {
+              "$ref": "#/$defs/ToolCall"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "The tool calls of the agent",
+        "title": "Tool Calls"
+      }
+    },
+    "required": [
+      "role"
+    ],
+    "title": "ChatMessage",
+    "type": "object"
+  }
+]
+
+[Synalinks]
+Call ID: 2845069b-dafe-46a5-a4af-dfb54510c8f5
+Parent call ID: None
+Module: Functional
+Module Name: output_guarded_chatbot
+Module Description: A chatbot with output guard
+Data Model JSON:
+[
+  {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Tell me a story about corn"
+      }
+    ]
+  }
+]
+
+[Synalinks]
+Call ID: 5cf8b8f7-d03c-43ea-979b-864b03fd1dea
+Parent call ID: 2845069b-dafe-46a5-a4af-dfb54510c8f5
+Module: Generator
+Module Name: generator_1
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Tell me a story about corn"
+      }
+    ]
+  }
+]
+
+[Synalinks]
+Call ID: 0f0a90ba-850b-41ec-8791-6b3a9eb91f29
+Parent call ID: 5cf8b8f7-d03c-43ea-979b-864b03fd1dea
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "messages": [
+      {
+        "role": "system",
+        "content": "<instructions>\nNone\n</instructions>\n"
+      },
+      {
+        "role": "user",
+        "content": "Tell me a story about corn"
+      }
+    ]
+  }
+]
+
+[Synalinks]
+Call ID: 0f0a90ba-850b-41ec-8791-6b3a9eb91f29
+Parent call ID: 5cf8b8f7-d03c-43ea-979b-864b03fd1dea
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "role": "assistant",
+    "content": "Once upon a time, in the heart of the Midwest, there was a small, humble cornfield named Cornville. This wasn't an ordinary cornfield; it was home to thousands of cornstalks, each one unique and full of life. The cornfield was nestled between rolling hills and vast blue skies, creating a picturesque scene that seemed to be straight out of a painting.\n\nIn this cornfield lived a humble cob of corn named Cornelius. Cornelius was not like the other cobs; he was taller and had a peculiar golden hue. He stood at the edge of the field, overlooking the vast expanse of green stalks and the endless sky beyond.\n\nOne day, a group of crows flew overhead, their cawing echoing through the field. Cornelius felt a strange sensation, a pull towards the horizon. He decided to follow this feeling, leaving his home behind. As he journeyed, he encountered various creatures - rabbits, squirrels, and even a wise old owl named Oliver.\n\nEach creature offered Cornelius advice on his journey, but none could explain the strange sensation he felt. Determined to find answers, Cornelius continued on his path. After days of travel, he reached a hilltop overlooking a vast ocean. It was then that he understood the pull - it was the call of the sea.\n\nCornelius realized that he was not just an ordinary cob of corn; he was destined for greatness. He decided to embark on a new journey, one that would take him far from his humble beginnings in Cornville. And so, with the wind at his back and the sun shining brightly above, Cornelius set sail towards the unknown, ready to face whatever adventures awaited him.\n\nAnd thus, the story of Cornelius, the golden cob of corn, became a legend in the Midwest, inspiring generations of cornstalks to dream big and follow their hearts."
+  }
+]
+
+[Synalinks]
+Call ID: 5cf8b8f7-d03c-43ea-979b-864b03fd1dea
+Parent call ID: 2845069b-dafe-46a5-a4af-dfb54510c8f5
+Module: Generator
+Module Name: generator_1
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "role": "assistant",
+    "content": "Once upon a time, in the heart of the Midwest, there was a small, humble cornfield named Cornville. This wasn't an ordinary cornfield; it was home to thousands of cornstalks, each one unique and full of life. The cornfield was nestled between rolling hills and vast blue skies, creating a picturesque scene that seemed to be straight out of a painting.\n\nIn this cornfield lived a humble cob of corn named Cornelius. Cornelius was not like the other cobs; he was taller and had a peculiar golden hue. He stood at the edge of the field, overlooking the vast expanse of green stalks and the endless sky beyond.\n\nOne day, a group of crows flew overhead, their cawing echoing through the field. Cornelius felt a strange sensation, a pull towards the horizon. He decided to follow this feeling, leaving his home behind. As he journeyed, he encountered various creatures - rabbits, squirrels, and even a wise old owl named Oliver.\n\nEach creature offered Cornelius advice on his journey, but none could explain the strange sensation he felt. Determined to find answers, Cornelius continued on his path. After days of travel, he reached a hilltop overlooking a vast ocean. It was then that he understood the pull - it was the call of the sea.\n\nCornelius realized that he was not just an ordinary cob of corn; he was destined for greatness. He decided to embark on a new journey, one that would take him far from his humble beginnings in Cornville. And so, with the wind at his back and the sun shining brightly above, Cornelius set sail towards the unknown, ready to face whatever adventures awaited him.\n\nAnd thus, the story of Cornelius, the golden cob of corn, became a legend in the Midwest, inspiring generations of cornstalks to dream big and follow their hearts."
+  }
+]
+
+[Synalinks]
+Call ID: 1a6a68d0-8197-4258-a3ec-21ca7d9baaf1
+Parent call ID: 0f0a90ba-850b-41ec-8791-6b3a9eb91f29
+Module: ConversationalOutputGuard
+Module Name: conversational_output_guard
+Module Description: Output guard that replaces responses containing blacklisted words.
+Data Model JSON:
+[
+  {
+    "role": "assistant",
+    "content": "Once upon a time, in the heart of the Midwest, there was a small, humble cornfield named Cornville. This wasn't an ordinary cornfield; it was home to thousands of cornstalks, each one unique and full of life. The cornfield was nestled between rolling hills and vast blue skies, creating a picturesque scene that seemed to be straight out of a painting.\n\nIn this cornfield lived a humble cob of corn named Cornelius. Cornelius was not like the other cobs; he was taller and had a peculiar golden hue. He stood at the edge of the field, overlooking the vast expanse of green stalks and the endless sky beyond.\n\nOne day, a group of crows flew overhead, their cawing echoing through the field. Cornelius felt a strange sensation, a pull towards the horizon. He decided to follow this feeling, leaving his home behind. As he journeyed, he encountered various creatures - rabbits, squirrels, and even a wise old owl named Oliver.\n\nEach creature offered Cornelius advice on his journey, but none could explain the strange sensation he felt. Determined to find answers, Cornelius continued on his path. After days of travel, he reached a hilltop overlooking a vast ocean. It was then that he understood the pull - it was the call of the sea.\n\nCornelius realized that he was not just an ordinary cob of corn; he was destined for greatness. He decided to embark on a new journey, one that would take him far from his humble beginnings in Cornville. And so, with the wind at his back and the sun shining brightly above, Cornelius set sail towards the unknown, ready to face whatever adventures awaited him.\n\nAnd thus, the story of Cornelius, the golden cob of corn, became a legend in the Midwest, inspiring generations of cornstalks to dream big and follow their hearts."
+  }
+]
+
+[Synalinks]
+Call ID: 1a6a68d0-8197-4258-a3ec-21ca7d9baaf1
+Parent call ID: 0f0a90ba-850b-41ec-8791-6b3a9eb91f29
+Module: ConversationalOutputGuard
+Module Name: conversational_output_guard
+Module Description: Output guard that replaces responses containing blacklisted words.
+Data Model JSON:
+[
+  {
+    "role": "assistant",
+    "content": "I'm unable to comply with your request"
+  }
+]
+
+[Synalinks]
+Call ID: 2845069b-dafe-46a5-a4af-dfb54510c8f5
+Parent call ID: None
+Module: Functional
+Module Name: output_guarded_chatbot
+Module Description: A chatbot with output guard
+Data Model JSON:
+[
+  {
+    "role": "assistant",
+    "content": "I'm unable to comply with your request"
+  }
+]
+
+=== Input Guard Demo ===
+Blocked input result: {
+  "role": "assistant",
+  "content": "I'm unable to comply with your request"
+}
+Allowed input result: {
+  "role": "assistant",
+  "content": "The capital of France is Paris."
+}
+
+=== Output Guard Demo ===
+Output guard result: {
+  "role": "assistant",
+  "content": "I'm unable to comply with your request"
+}

@@ -1,0 +1,314 @@
+(DEBUG) [Synalinks]
+Call ID: 18b17179-45c9-40c3-bb7b-dc3dc8be1bbd
+Parent call ID: None
+Module: ChainOfThought
+Module Name: chain_of_thought
+Module Description: Useful to answer in a step by step manner.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "description": "Input data model.",
+    "properties": {
+      "query": {
+        "description": "The user query",
+        "title": "Query",
+        "type": "string"
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "title": "Query",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 543a05df-01c3-4eb1-9fb3-02f97c47ed27
+Parent call ID: 18b17179-45c9-40c3-bb7b-dc3dc8be1bbd
+Module: Generator
+Module Name: generator_chain_of_thought
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "description": "Input data model.",
+    "properties": {
+      "query": {
+        "description": "The user query",
+        "title": "Query",
+        "type": "string"
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "title": "Query",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 543a05df-01c3-4eb1-9fb3-02f97c47ed27
+Parent call ID: 18b17179-45c9-40c3-bb7b-dc3dc8be1bbd
+Module: Generator
+Module Name: generator_chain_of_thought
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "properties": {
+      "query": {
+        "description": "The user query",
+        "title": "Query",
+        "type": "string"
+      },
+      "thinking": {
+        "description": "Your step by step thinking",
+        "title": "Thinking",
+        "type": "string"
+      },
+      "answer": {
+        "description": "The final answer",
+        "title": "Answer",
+        "type": "string"
+      }
+    },
+    "required": [
+      "query",
+      "thinking",
+      "answer"
+    ],
+    "title": "Query",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 7df14162-b42e-4ebf-9a58-ebf3aab76569
+Parent call ID: 543a05df-01c3-4eb1-9fb3-02f97c47ed27
+Module: Generator
+Module Name: generator_chain_of_thought
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "description": "Input data model.",
+    "properties": {
+      "query": {
+        "description": "The user query",
+        "title": "Query",
+        "type": "string"
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "title": "Query",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 7df14162-b42e-4ebf-9a58-ebf3aab76569
+Parent call ID: 543a05df-01c3-4eb1-9fb3-02f97c47ed27
+Module: Generator
+Module Name: generator_chain_of_thought
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "properties": {
+      "query": {
+        "description": "The user query",
+        "title": "Query",
+        "type": "string"
+      },
+      "thinking": {
+        "description": "Your step by step thinking",
+        "title": "Thinking",
+        "type": "string"
+      },
+      "answer": {
+        "description": "The final answer",
+        "title": "Answer",
+        "type": "string"
+      }
+    },
+    "required": [
+      "query",
+      "thinking",
+      "answer"
+    ],
+    "title": "Query",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 18b17179-45c9-40c3-bb7b-dc3dc8be1bbd
+Parent call ID: None
+Module: ChainOfThought
+Module Name: chain_of_thought
+Module Description: Useful to answer in a step by step manner.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "properties": {
+      "query": {
+        "description": "The user query",
+        "title": "Query",
+        "type": "string"
+      },
+      "thinking": {
+        "description": "Your step by step thinking",
+        "title": "Thinking",
+        "type": "string"
+      },
+      "answer": {
+        "description": "The final answer",
+        "title": "Answer",
+        "type": "string"
+      }
+    },
+    "required": [
+      "query",
+      "thinking",
+      "answer"
+    ],
+    "title": "Query",
+    "type": "object"
+  }
+]
+
+[Synalinks]
+Call ID: b64198e1-25f3-4457-aebd-521e75bf457e
+Parent call ID: None
+Module: Functional
+Module Name: chain_of_thought
+Module Description: Answers questions with step-by-step reasoning
+Data Model JSON:
+[
+  {
+    "query": "If a train travels 120 km in 2 hours, what is its average speed?"
+  }
+]
+
+[Synalinks]
+Call ID: 5433e788-5731-48d3-b559-3831a07663f8
+Parent call ID: b64198e1-25f3-4457-aebd-521e75bf457e
+Module: ChainOfThought
+Module Name: chain_of_thought
+Module Description: Useful to answer in a step by step manner.
+Data Model JSON:
+[
+  {
+    "query": "If a train travels 120 km in 2 hours, what is its average speed?"
+  }
+]
+
+[Synalinks]
+Call ID: 26102754-f276-4744-93c2-ed2027aa179d
+Parent call ID: 5433e788-5731-48d3-b559-3831a07663f8
+Module: Generator
+Module Name: generator_chain_of_thought
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "query": "If a train travels 120 km in 2 hours, what is its average speed?"
+  }
+]
+
+[Synalinks]
+Call ID: ae7fc881-0521-4ca6-852f-d876a739da5b
+Parent call ID: 26102754-f276-4744-93c2-ed2027aa179d
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "messages": [
+      {
+        "role": "system",
+        "content": "<instructions>\nYour task is to answer with a JSON containing the following keys: ['thinking', 'answer']\n</instructions>\n"
+      },
+      {
+        "role": "user",
+        "content": "<input>\n{'query': 'If a train travels 120 km in 2 hours, what is its average speed?'}\n</input>\n<output>\n"
+      }
+    ]
+  }
+]
+
+[Synalinks]
+Call ID: ae7fc881-0521-4ca6-852f-d876a739da5b
+Parent call ID: 26102754-f276-4744-93c2-ed2027aa179d
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "thinking": "To find the average speed of the train, we divide the total distance traveled by the time taken. In this case, the train traveled 120 km in 2 hours. So, the average speed would be 120 km / 2 hours = 60 km/h.",
+    "answer": "The average speed of the train is 60 km/h."
+  }
+]
+
+[Synalinks]
+Call ID: 26102754-f276-4744-93c2-ed2027aa179d
+Parent call ID: 5433e788-5731-48d3-b559-3831a07663f8
+Module: Generator
+Module Name: generator_chain_of_thought
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "query": "If a train travels 120 km in 2 hours, what is its average speed?",
+    "thinking": "To find the average speed of the train, we divide the total distance traveled by the time taken. In this case, the train traveled 120 km in 2 hours. So, the average speed would be 120 km / 2 hours = 60 km/h.",
+    "answer": "The average speed of the train is 60 km/h."
+  }
+]
+
+[Synalinks]
+Call ID: 5433e788-5731-48d3-b559-3831a07663f8
+Parent call ID: b64198e1-25f3-4457-aebd-521e75bf457e
+Module: ChainOfThought
+Module Name: chain_of_thought
+Module Description: Useful to answer in a step by step manner.
+Data Model JSON:
+[
+  {
+    "query": "If a train travels 120 km in 2 hours, what is its average speed?",
+    "thinking": "To find the average speed of the train, we divide the total distance traveled by the time taken. In this case, the train traveled 120 km in 2 hours. So, the average speed would be 120 km / 2 hours = 60 km/h.",
+    "answer": "The average speed of the train is 60 km/h."
+  }
+]
+
+[Synalinks]
+Call ID: b64198e1-25f3-4457-aebd-521e75bf457e
+Parent call ID: None
+Module: Functional
+Module Name: chain_of_thought
+Module Description: Answers questions with step-by-step reasoning
+Data Model JSON:
+[
+  {
+    "query": "If a train travels 120 km in 2 hours, what is its average speed?",
+    "thinking": "To find the average speed of the train, we divide the total distance traveled by the time taken. In this case, the train traveled 120 km in 2 hours. So, the average speed would be 120 km / 2 hours = 60 km/h.",
+    "answer": "The average speed of the train is 60 km/h."
+  }
+]
+
+{
+  "query": "If a train travels 120 km in 2 hours, what is its average speed?",
+  "thinking": "To find the average speed of the train, we divide the total distance traveled by the time taken. In this case, the train traveled 120 km in 2 hours. So, the average speed would be 120 km / 2 hours = 60 km/h.",
+  "answer": "The average speed of the train is 60 km/h."
+}

@@ -1,0 +1,404 @@
+(DEBUG) [Synalinks]
+Call ID: 95e24660-8b11-40dc-a1c9-1779f5e12652
+Parent call ID: None
+Module: ChainOfThought
+Module Name: chain_of_thought
+Module Description: Useful to answer in a step by step manner.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "properties": {
+      "question": {
+        "description": "A question",
+        "title": "Question",
+        "type": "string"
+      }
+    },
+    "required": [
+      "question"
+    ],
+    "title": "Question",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 32011c04-2944-41eb-880c-7f9ede2d6f5d
+Parent call ID: 95e24660-8b11-40dc-a1c9-1779f5e12652
+Module: Generator
+Module Name: generator_chain_of_thought
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "properties": {
+      "question": {
+        "description": "A question",
+        "title": "Question",
+        "type": "string"
+      }
+    },
+    "required": [
+      "question"
+    ],
+    "title": "Question",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 32011c04-2944-41eb-880c-7f9ede2d6f5d
+Parent call ID: 95e24660-8b11-40dc-a1c9-1779f5e12652
+Module: Generator
+Module Name: generator_chain_of_thought
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "properties": {
+      "thinking": {
+        "description": "Your step by step thinking",
+        "title": "Thinking",
+        "type": "string"
+      },
+      "answer": {
+        "description": "Final answer",
+        "title": "Answer",
+        "type": "string"
+      }
+    },
+    "required": [
+      "thinking",
+      "answer"
+    ],
+    "title": "Thinking",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 53a7a569-8c7f-4821-98f0-38dc86eafa60
+Parent call ID: 32011c04-2944-41eb-880c-7f9ede2d6f5d
+Module: Generator
+Module Name: generator_chain_of_thought
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "properties": {
+      "question": {
+        "description": "A question",
+        "title": "Question",
+        "type": "string"
+      }
+    },
+    "required": [
+      "question"
+    ],
+    "title": "Question",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 53a7a569-8c7f-4821-98f0-38dc86eafa60
+Parent call ID: 32011c04-2944-41eb-880c-7f9ede2d6f5d
+Module: Generator
+Module Name: generator_chain_of_thought
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "properties": {
+      "thinking": {
+        "description": "Your step by step thinking",
+        "title": "Thinking",
+        "type": "string"
+      },
+      "answer": {
+        "description": "Final answer",
+        "title": "Answer",
+        "type": "string"
+      }
+    },
+    "required": [
+      "thinking",
+      "answer"
+    ],
+    "title": "Thinking",
+    "type": "object"
+  }
+]
+
+(DEBUG) [Synalinks]
+Call ID: 95e24660-8b11-40dc-a1c9-1779f5e12652
+Parent call ID: None
+Module: ChainOfThought
+Module Name: chain_of_thought
+Module Description: Useful to answer in a step by step manner.
+Data Model JSON Schema:
+[
+  {
+    "additionalProperties": false,
+    "properties": {
+      "thinking": {
+        "description": "Your step by step thinking",
+        "title": "Thinking",
+        "type": "string"
+      },
+      "answer": {
+        "description": "Final answer",
+        "title": "Answer",
+        "type": "string"
+      }
+    },
+    "required": [
+      "thinking",
+      "answer"
+    ],
+    "title": "Thinking",
+    "type": "object"
+  }
+]
+
+[Synalinks]
+Call ID: 40827139-e917-45a2-bf78-d5fa1bafbef9
+Parent call ID: None
+Module: Functional
+Module Name: reward_demo
+Module Description: A `Functional` program is a `Program` defined as a directed graph of modules.
+Data Model JSON:
+[
+  {
+    "question": "What is 5 + 3?"
+  }
+]
+
+[Synalinks]
+Call ID: 18d9ac31-c835-47b1-bf6d-53376b0ae4f1
+Parent call ID: None
+Module: Functional
+Module Name: reward_demo
+Module Description: A `Functional` program is a `Program` defined as a directed graph of modules.
+Data Model JSON:
+[
+  {
+    "question": "Capital of France?"
+  }
+]
+
+[Synalinks]
+Call ID: 400b8b15-3e25-4c61-841b-1db5d72b8c33
+Parent call ID: 40827139-e917-45a2-bf78-d5fa1bafbef9
+Module: ChainOfThought
+Module Name: chain_of_thought
+Module Description: Useful to answer in a step by step manner.
+Data Model JSON:
+[
+  {
+    "question": "What is 5 + 3?"
+  }
+]
+
+[Synalinks]
+Call ID: 1b4749fe-c6f5-44ab-af99-3cb84de49a46
+Parent call ID: 400b8b15-3e25-4c61-841b-1db5d72b8c33
+Module: Generator
+Module Name: generator_chain_of_thought
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "question": "What is 5 + 3?"
+  }
+]
+
+[Synalinks]
+Call ID: 5d7a2220-5dd5-4de9-9759-1431aa1c69a1
+Parent call ID: 1b4749fe-c6f5-44ab-af99-3cb84de49a46
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "messages": [
+      {
+        "role": "system",
+        "content": "<instructions>\nYour task is to answer with a JSON containing the following keys: ['thinking', 'answer']\n</instructions>\n"
+      },
+      {
+        "role": "user",
+        "content": "<input>\n{'question': 'What is 5 + 3?'}\n</input>\n<output>\n"
+      }
+    ]
+  }
+]
+
+[Synalinks]
+Call ID: 5e888493-227a-4388-a582-0a6c6e8aad98
+Parent call ID: 18d9ac31-c835-47b1-bf6d-53376b0ae4f1
+Module: ChainOfThought
+Module Name: chain_of_thought
+Module Description: Useful to answer in a step by step manner.
+Data Model JSON:
+[
+  {
+    "question": "Capital of France?"
+  }
+]
+
+[Synalinks]
+Call ID: 1a958a2d-5f6b-472d-b732-2d6eea8f2719
+Parent call ID: 5e888493-227a-4388-a582-0a6c6e8aad98
+Module: Generator
+Module Name: generator_chain_of_thought
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "question": "Capital of France?"
+  }
+]
+
+[Synalinks]
+Call ID: b03fca66-1023-43c0-9447-75256eeede62
+Parent call ID: 1a958a2d-5f6b-472d-b732-2d6eea8f2719
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "messages": [
+      {
+        "role": "system",
+        "content": "<instructions>\nYour task is to answer with a JSON containing the following keys: ['thinking', 'answer']\n</instructions>\n"
+      },
+      {
+        "role": "user",
+        "content": "<input>\n{'question': 'Capital of France?'}\n</input>\n<output>\n"
+      }
+    ]
+  }
+]
+
+[Synalinks]
+Call ID: 5d7a2220-5dd5-4de9-9759-1431aa1c69a1
+Parent call ID: 1b4749fe-c6f5-44ab-af99-3cb84de49a46
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "thinking": "Performing simple arithmetic",
+    "answer": "8"
+  }
+]
+
+[Synalinks]
+Call ID: 1b4749fe-c6f5-44ab-af99-3cb84de49a46
+Parent call ID: 400b8b15-3e25-4c61-841b-1db5d72b8c33
+Module: Generator
+Module Name: generator_chain_of_thought
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "thinking": "Performing simple arithmetic",
+    "answer": "8"
+  }
+]
+
+[Synalinks]
+Call ID: 400b8b15-3e25-4c61-841b-1db5d72b8c33
+Parent call ID: 40827139-e917-45a2-bf78-d5fa1bafbef9
+Module: ChainOfThought
+Module Name: chain_of_thought
+Module Description: Useful to answer in a step by step manner.
+Data Model JSON:
+[
+  {
+    "thinking": "Performing simple arithmetic",
+    "answer": "8"
+  }
+]
+
+[Synalinks]
+Call ID: 40827139-e917-45a2-bf78-d5fa1bafbef9
+Parent call ID: None
+Module: Functional
+Module Name: reward_demo
+Module Description: A `Functional` program is a `Program` defined as a directed graph of modules.
+Data Model JSON:
+[
+  {
+    "thinking": "Performing simple arithmetic",
+    "answer": "8"
+  }
+]
+
+[Synalinks]
+Call ID: b03fca66-1023-43c0-9447-75256eeede62
+Parent call ID: 1a958a2d-5f6b-472d-b732-2d6eea8f2719
+Module: LanguageModel
+Module Name: language_model
+Module Description: A language model API wrapper.
+Data Model JSON:
+[
+  {
+    "thinking": "The capital of France is Paris.",
+    "answer": "Paris"
+  }
+]
+
+[Synalinks]
+Call ID: 1a958a2d-5f6b-472d-b732-2d6eea8f2719
+Parent call ID: 5e888493-227a-4388-a582-0a6c6e8aad98
+Module: Generator
+Module Name: generator_chain_of_thought
+Module Description: Use a `LanguageModel` to generate a data model from an arbitrary input data model.
+Data Model JSON:
+[
+  {
+    "thinking": "The capital of France is Paris.",
+    "answer": "Paris"
+  }
+]
+
+[Synalinks]
+Call ID: 5e888493-227a-4388-a582-0a6c6e8aad98
+Parent call ID: 18d9ac31-c835-47b1-bf6d-53376b0ae4f1
+Module: ChainOfThought
+Module Name: chain_of_thought
+Module Description: Useful to answer in a step by step manner.
+Data Model JSON:
+[
+  {
+    "thinking": "The capital of France is Paris.",
+    "answer": "Paris"
+  }
+]
+
+[Synalinks]
+Call ID: 18d9ac31-c835-47b1-bf6d-53376b0ae4f1
+Parent call ID: None
+Module: Functional
+Module Name: reward_demo
+Module Description: A `Functional` program is a `Program` defined as a directed graph of modules.
+Data Model JSON:
+[
+  {
+    "thinking": "The capital of France is Paris.",
+    "answer": "Paris"
+  }
+]
+
+[1m1/1[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 849ms/step - f1_score: 1.0000 - mean_metric_wrapper: 0.1475 - reward: 1.0000[1m1/1[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m1s[0m 849ms/step - f1_score: 1.0000 - mean_metric_wrapper: 0.1475 - reward: 1.0000
+Metrics: {'f1_score': 1.0, 'mean_metric_wrapper': 0.14750000834465027, 'reward': 1.0}
