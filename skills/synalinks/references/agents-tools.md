@@ -19,8 +19,10 @@ async def calculate(expression: str):
     Returns:
         dict with 'result' and 'log' keys
     """
+    if not all(c in "0123456789+-*/(). " for c in expression):
+        return {"result": None, "log": "Error: invalid characters in expression"}
     try:
-        result = eval(expression, {"__builtins__": {}})
+        result = eval(expression, {"__builtins__": None}, {})
         return {"result": result, "log": "Success"}
     except Exception as e:
         return {"result": None, "log": f"Error: {e}"}
@@ -36,6 +38,9 @@ tool = synalinks.Tool(calculate)
 3. **Docstring** - Required for LLM understanding
 4. **Serializable** - Decorate with `@synalinks.utils.register_synalinks_serializable()`
 5. **Return dict** - Should return dict with results and status
+6. **Validate inputs** - Arguments are LLM-generated and can be steered by
+   prompt injection; never pass them unvalidated to `eval`/`exec`, SQL, or a
+   shell
 
 ### Multiple Parameters
 
@@ -218,6 +223,11 @@ outputs = await synalinks.FunctionCallingAgent(
 )(inputs)
 ```
 
+> **Trust boundary:** only connect to MCP servers you trust. Remote tool
+> schemas and every tool result enter the agent's context and can steer its
+> behavior (prompt injection), and the tools run with your process's
+> privileges. Treat remote tools like third-party code.
+
 ### MCP Server Example
 
 ```python
@@ -229,7 +239,9 @@ mcp = FastMCP("Math Server")
 @mcp.tool()
 def calculate(expression: str) -> dict:
     """Calculate mathematical expression."""
-    return {"result": eval(expression)}
+    if not all(c in "0123456789+-*/(). " for c in expression):
+        return {"result": None, "log": "Error: invalid characters"}
+    return {"result": eval(expression, {"__builtins__": None}, {})}
 
 # Run with: uvicorn mcp_server:app --port 8183
 app = mcp.streamable_http_app()
@@ -428,8 +440,10 @@ async def calculate(expression: str):
     Args:
         expression: Math expression (numbers and +,-,*,/ only)
     """
+    if not all(c in "0123456789+-*/(). " for c in expression):
+        return {"result": None, "log": "Invalid characters"}
     try:
-        return {"result": eval(expression), "log": "Success"}
+        return {"result": eval(expression, {"__builtins__": None}, {}), "log": "Success"}
     except:
         return {"result": None, "log": "Invalid expression"}
 
