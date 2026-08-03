@@ -1,21 +1,28 @@
-# Claude Skills for Synalinks
+# Agent Skills for Synalinks
 
 ---
 
-This repository contains skills to use with Claude Code.
+This repository contains skills for coding agents that read the open Agent
+Skills format (`SKILL.md`): Claude Code, Codex, OpenCode, pi, and others.
 
-## What Are Claude Skills?
+## What are Agent Skills?
 
-Claude Skills are customizable workflows that teach Claude how to perform specific tasks according to your unique requirements. Skills enable Claude to execute tasks in a repeatable, standardized manner across all Claude platforms.
+Agent Skills are reusable instructions, in a plain `SKILL.md` file, that teach a
+coding agent how to perform a task the way you want it done. The format started
+at Anthropic and is now an open standard read by agents across the ecosystem, so
+one skill works in every agent that supports it, unmodified.
 
 ## What is the goal of Synalinks skills?
 
-The goal of Synalinks skills is to teach Claude to use the Synalinks framework correctly. Synalinks is Keras-inspired, so without guidance LMs tend to mix Keras / LangChain / DSPy syntax — producing plausible-looking but broken code. These skills constrain Claude to idiomatic Synalinks usage.
+The goal of Synalinks skills is to teach coding agents to use the Synalinks
+framework correctly. Synalinks is Keras-inspired, so without guidance LMs tend to
+mix Keras / LangChain / DSPy syntax, producing plausible-looking but broken code.
+These skills constrain the agent to idiomatic Synalinks usage.
 
 ## The `synalinks` skill
 
 This repo ships a **single skill**, `synalinks`, that covers the whole
-framework. Claude auto-activates it based on its `SKILL.md` `description`. The
+framework. The agent auto-activates it based on its `SKILL.md` `description`. The
 `SKILL.md` is a scannable overview, organized into one section per slice of the
 framework, each pointing to a runnable script (and its captured run log) and a
 deep-dive reference doc:
@@ -35,22 +42,27 @@ deep-dive reference doc:
 | **Datasets** | Built-in datasets (gsm8k, hotpotqa, arcagi), custom iterable datasets, visualization (`plot_program`, `plot_history`, `plot_metrics_*`) |
 
 The skill folder contains:
-- `SKILL.md` — frontmatter + scannable usage guide for the whole framework
-- `scripts/` — runnable example scripts (each docstring states its `Usage:` and `Run log:`)
-- `references/` — deep-dive reference docs plus the captured run logs (`*.log`)
+- `SKILL.md`: frontmatter + scannable usage guide for the whole framework
+- `scripts/`: runnable example scripts (each docstring states its `Usage:` and `Run log:`)
+- `references/`: deep-dive reference docs plus the captured run logs (`*.log`)
 
 ## Install
 
 The recommended way to install this skill is the official
 [`skills`](https://skills.sh) CLI (`npx skills`). It clones this repo, discovers
-the `synalinks` skill, and wires it into your agent's skills directory —
-no manual cloning, copying, or zipping required. It needs Node.js (the `npx`
-that ships with it); nothing else.
+the `synalinks` skill, and wires it into your agent's skills directory: no manual
+cloning, copying, or zipping required. It needs Node.js (the `npx` that ships
+with it); nothing else.
 
-### Quick start (Claude Code)
+The CLI detects the agents installed on your machine, so the same command works
+whether you use Claude Code, Codex, OpenCode, pi, or another supported agent.
+The examples below use Claude Code; see [Other agents](#other-agents) to target
+a specific one.
+
+### Quick start
 
 `synalinks` is a skill for the **synalinks Python library**, so the natural place
-to install it is **the project where you use synalinks** — that way the agent
+to install it is **the project where you use synalinks**, so the agent
 gets idiomatic-synalinks guidance exactly where you write synalinks code. Project
 scope is also the CLI default, so just run this from your project root:
 
@@ -58,8 +70,9 @@ scope is also the CLI default, so just run this from your project root:
 npx skills add SynaLinks/synalinks-skills --skill synalinks
 ```
 
-This installs into the current project (Claude Code reads it from
-`<repo>/.claude/skills/`). Commit the generated `skills-lock.json` (see
+This installs into the current project (each agent reads it from its own
+directory, e.g. `<repo>/.claude/skills/` for Claude Code). Commit the generated
+`skills-lock.json` (see
 [Updating](#updating)) so teammates and CI resolve the same skill content.
 
 Want it in **every** project instead of per-project? Install globally:
@@ -68,8 +81,9 @@ Want it in **every** project instead of per-project? Install globally:
 npx skills add SynaLinks/synalinks-skills --skill synalinks --global
 ```
 
-That installs to `~/.claude/skills/`. By default the CLI symlinks the skill;
-pass `--copy` to copy the files instead.
+That installs to the agent's user-level skills directory (`~/.claude/skills/`
+for Claude Code). By default the CLI symlinks the skill; pass `--copy` to copy
+the files instead.
 
 List what's in the repo without installing anything:
 
@@ -86,9 +100,19 @@ The `skills` CLI supports 70+ agents. Target one (or all) explicitly with
 `-a`/`--agent`:
 
 ```shell
-npx skills add SynaLinks/synalinks-skills --skill synalinks -a claude-code   # one agent
+npx skills add SynaLinks/synalinks-skills --skill synalinks -a claude-code   # Claude Code
+npx skills add SynaLinks/synalinks-skills --skill synalinks -a codex         # Codex
+npx skills add SynaLinks/synalinks-skills --skill synalinks -a opencode      # OpenCode
+npx skills add SynaLinks/synalinks-skills --skill synalinks -a pi            # pi
 npx skills add SynaLinks/synalinks-skills --all                              # everything, all agents
 ```
+
+Passing an unknown name prints the full list of valid agent slugs, which
+currently includes cursor, gemini-cli, github-copilot, windsurf, zed, crush,
+goose, junie and roo, among others.
+
+The skill content is identical in every case: one `SKILL.md`, no per-agent
+variants to maintain.
 
 ### Verify
 
@@ -96,9 +120,9 @@ npx skills add SynaLinks/synalinks-skills --all                              # e
 npx skills list            # list installed skills
 ```
 
-In Claude Code you can also run the `/skills` slash command — the `synalinks`
-skill should appear. Claude auto-activates it for your task based on its
-`SKILL.md` `description` field — no manual selection needed.
+In Claude Code you can also run the `/skills` slash command; the `synalinks`
+skill should appear. Agents auto-activate it for your task based on the
+`SKILL.md` `description` field, so there is nothing to select manually.
 
 ### Claude.ai (web) and Claude Desktop
 
@@ -117,7 +141,7 @@ for the latest UI walkthrough.
 
 ## Updating
 
-The `synalinks` skill is **not** semver-versioned — it tracks the `main` branch
+The `synalinks` skill is **not** semver-versioned: it tracks the `main` branch
 of this repo. "Latest" always means the current `main` (the CLI installs from
 the default branch's HEAD; there is no version tag to pin). Update with:
 
@@ -189,4 +213,4 @@ These skills have been created by [Ramiro Salas](https://www.linkedin.com/in/rsa
 
 ## Synalinks Project
 
-- [Synalinks Framework](https://github.com/SynaLinks/synalinks) - The neuro-symbolic AI framework these skills are designed for
+- [Synalinks Framework](https://github.com/SynaLinks/synalinks): the neuro-symbolic AI framework these skills are designed for
