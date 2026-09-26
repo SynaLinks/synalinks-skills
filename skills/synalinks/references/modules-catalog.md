@@ -76,10 +76,10 @@ Single-label classification for routing decisions.
 outputs = await synalinks.Decision(
     question="What type of query is this?",
     labels=["factual", "opinion", "creative"],
-    language_model=lm,
-    return_inputs=True,
+    language_model=lm,   # or decision_model=dm, see decision-models.md
 )(inputs)
-# Output includes: inputs + label
+# Output: {"thinking", "choice"} ({"choice"} with a decision model)
+# Decision has no return_inputs: use `inputs & outputs` to keep both
 ```
 
 ### Branch
@@ -104,6 +104,8 @@ Conditional routing to different modules based on decision.
 
 **Key behaviors:**
 - Non-activated branches return `None` (not executed)
+- `decision_model=` routes with a decision model (branches keep their models);
+  `min_confidence` / `threshold` let it select no branch when unsure
 - Each branch module is optimized separately during training (specialized)
 - Labels constrain LLM output - prevents hallucination
 

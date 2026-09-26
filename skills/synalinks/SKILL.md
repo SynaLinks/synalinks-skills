@@ -1,6 +1,6 @@
 ---
 name: synalinks
-description: Use for anything involving the Synalinks neuro-symbolic LM framework (Keras-inspired) — DataModel/Field/Input, JSON operators (+ & | ^ ~), synalinks.ops, LanguageModel/EmbeddingModel and provider prefixes (openai/anthropic/ollama/groq/openrouter/bedrock/...); the Program class and its four building APIs (Functional/Sequential/Subclassing/Mixed), save/load, summary; generation modules (Generator, ChainOfThought, SelfCritique, Identity, PythonSynthesis) and custom Module subclassing; control flow (Decision, Branch, And/Or/Xor, parallel branches, self-consistency, XOR guards); agents (FunctionCallingAgent, RecursiveLanguageModelAgent/RLM, DeepAgent, Tool, MCP, subagents); KnowledgeBase/RAG (DuckDB, EmbedKnowledge/UpdateKnowledge/RetrieveKnowledge, hybrid search); training (compile/fit/evaluate/predict, callbacks, ProgramCheckpoint); rewards & metrics (ExactMatch, CosineSimilarity, LMAsJudge, ProgramAsJudge, F1Score, custom rewards, masking); optimizers (RandomFewShot, OMEGA/DNS); datasets (gsm8k, hotpotqa, arcagi) and visualization. Synalinks is Keras-shaped, so without guidance LMs mix Keras/LangChain/DSPy syntax — this skill constrains usage to idiomatic Synalinks.
+description: Use for anything involving the Synalinks neuro-symbolic LM framework (Keras-inspired): DataModel/Field/Input, JSON operators (+ & | ^ ~), synalinks.ops; LanguageModel/EmbeddingModel and provider prefixes; DecisionModel (TypeSafe jev decision models, decision_model=, min_confidence/threshold); the Program class and its four APIs, save/load; modules (Generator, ChainOfThought, SelfCritique, PythonSynthesis, custom Module); control flow (Decision, MultiDecision, Branch, And/Or/Xor, guards); agents (FunctionCallingAgent, RLM, DeepAgent, Tool, MCP); KnowledgeBase/RAG; training (compile/fit/evaluate/predict, callbacks, KerasTuner tuners); rewards (ExactMatch, CosineSimilarity, LMAsJudge, ProgramAsJudge, RubricsAsJudge and presets like Faithfulness/Toxicity, AgentAsJudge, DeepAgentAsJudge, RLMAsJudge, ComposableReward, BatchReward) and metrics; optimizers (RandomFewShot, OMEGA); datasets, visualization. Synalinks is Keras-shaped: without guidance LMs mix Keras/LangChain/DSPy syntax.
 ---
 
 # Synalinks
@@ -18,6 +18,8 @@ and a **deep-dive reference doc** under `references/`.
 - **Program** — DAG of modules with conditional logic (replaces models).
 - **Reward / Optimizer** — guide training by *maximizing reward* (no gradients;
   prompts/examples/plans are the trainable variables).
+- **DecisionModel** — answers typed questions (yes/no, choice, score) with
+  calibrated probabilities instead of generating text; used for decisions.
 
 ## Universal gotchas (apply everywhere)
 
@@ -31,6 +33,8 @@ and a **deep-dive reference doc** under `references/`.
    default is set (`set_default_language_model(...)`); resolved at call time.
 5. **Always check for `None` results** — a failed LM call or a non-activated
    branch yields `None`.
+6. **A `DecisionModel` is never a `language_model`** — passing one as
+   `language_model` raises. Modules that can decide take `decision_model=`.
 
 ## Quick Start
 
@@ -116,7 +120,8 @@ subclasses with `@synalinks.saving.register_synalinks_serializable()`.
   `reasoning_effort`, `use_inputs_schema`, `streaming`.
 - **ChainOfThought** — Generator that prepends a `thinking` field
   (`reasoning_effort="low"` by default).
-- **SelfCritique** — produces a `critique` and optional `reward` in `[0,1]`.
+- **SelfCritique** — produces a `critique` and optional `reward` in `[0,1]`
+  (with `decision_model=`: only the `reward`, graded on five levels).
 - **Identity** — pass-through placeholder.
 - **PythonSynthesis** — generates/executes Python in a sandbox (no LM call; the
   script is the trainable variable; needs advanced optimizers).
@@ -137,6 +142,8 @@ for trainable state; return `None` to short-circuit logical flows.
 
 - **Decision** — single-label routing; output `{thinking, choice}` constrained
   to `labels`. **MultiDecision** — multi-label (`choices: list[str]`).
+  Both take `decision_model=` (output without `thinking`); `Decision` then
+  accepts `min_confidence` (abstains → `None`), `MultiDecision` `threshold`.
 - **Branch** — route to one of N modules; `branches`/`labels` same length;
   non-activated branches return `None`; each branch trains separately;
   `decision_type=MultiDecision` for multi-fire. Merge with `|` (not `+`).
@@ -209,15 +216,44 @@ custom `Callback` subclasses (sync hooks). `compile` accepts string identifiers
 - [`scripts/training_example.py`](scripts/training_example.py) →
   [`references/training_example.log`](references/training_example.log) (logging off — `fit()` progress bar only)
 
+## Decision models
+
+`synalinks.DecisionModel(model="typesafe/jev-latest")` (key: `TYPESAFE_API_KEY`)
+answers the fields of a data model as questions, each asked with its
+`description`: `bool` → yes/no, `Literal`/`Enum` → choice, score types
+(`synalinks.Rating`, `synalinks.Score`, ...) → score over the scale. Free-text
+fields raise `UnsupportedSchemaError`. Pass it as `decision_model=` to
+`Generator`, `Decision`, `MultiDecision`, `Branch`, `SelfCritique`,
+`RubricsAsJudge` (they drop `thinking`/`critique`); `Branch` routes with it
+while its branches keep their LMs. `min_confidence` (Decision/Branch) and
+`threshold` (MultiDecision/Branch) let a decision be skipped rather than
+guessed; tune them with `synalinks.tuners` (price an abstention between a
+right and a wrong answer in the reward). `set_default_decision_model(...)`
+makes these modules prefer it over the default LM. It learns in context: every
+optimizer (incl. OMEGA) works unchanged. Counted by the LM operational metrics.
+
+- Deep dive: [`references/decision-models.md`](references/decision-models.md)
+- [`scripts/decision_model.py`](scripts/decision_model.py) (needs
+  `TYPESAFE_API_KEY`; no captured run)
+
 ## Rewards & metrics
 
 Rewards drive optimization; metrics are passive. Both return a float in `[0,1]`
 and support `in_mask`/`out_mask`(`_pattern`) field masking. Built-in rewards:
 `ExactMatch`, `CosineSimilarity`, `LMAsJudge`, `ProgramAsJudge` (judge program
-must output a float field named `reward`). Custom: async `(y_true, y_pred) ->
-float` decorated and wrapped in `RewardFunctionWrapper` — **always handle
-`None`**. Metrics: `F1Score`, `FBetaScore`, `BinaryF1Score`, `ListF1Score`,
-`Precision`/`Recall`, `MeanMetricWrapper(fn=...)`.
+must output a float field named `reward`), `RubricsAsJudge` (named, weighted
+criteria; `decision_model=` grades them all in one call) and its **presets**
+(`list_rubrics()`: `Faithfulness`, `AnswerRelevancy`, `Hallucination`,
+`ContextualPrecision`/`Recall`/`Relevancy`, `Toxicity`, `Bias`, `PIILeakage`,
+`TaskCompletion`, `ToolCorrectness`, `PlanQuality`, `RoleAdherence`, ... —
+31 in all), tool-using judges `AgentAsJudge` (tools), `DeepAgentAsJudge`
+(sandboxed project: run tests/patches) and `RLMAsJudge` (Python sandbox,
+huge outputs), `ComposableReward` (weighted mix of rewards) and `BatchReward` /
+`BatchRewardFunctionWrapper` (whole-batch rewards, never auto-wrapped). Custom:
+async `(y_true, y_pred) -> float` decorated and wrapped in
+`RewardFunctionWrapper` — **always handle `None`**. Metrics: `F1Score`,
+`FBetaScore`, `BinaryF1Score`, `ListF1Score`, `Precision`/`Recall`,
+`MeanMetricWrapper(fn=...)`.
 
 - Deep dive: [`references/rewards-metrics.md`](references/rewards-metrics.md)
 - [`scripts/custom_reward.py`](scripts/custom_reward.py) →
@@ -295,6 +331,7 @@ Every runnable script states its `Usage:` and (where a captured run exists) its
 | `scripts/deep_agent.py` | `references/deep_agent.log` | Agents (DeepAgent) |
 | `scripts/rag_example.py` | `references/rag_example.log` | Knowledge / RAG |
 | `scripts/custom_reward.py` | `references/custom_reward.log` | Rewards |
+| `scripts/decision_model.py` | — (needs `TYPESAFE_API_KEY`) | Decision models |
 | `scripts/training_example.py` | `references/training_example.log` | Training (`.fit`, progress bar only) |
 | `scripts/omega_example.py` | `references/omega_example.log` | Optimizers (`.fit`, progress bar only) |
 | `scripts/custom_dataset.py` | `references/custom_dataset.log` | Datasets (`.fit`, progress bar only) |
@@ -305,4 +342,5 @@ Every runnable script states its `Usage:` and (where a captured run exists) its
 
 `api-reference.md`, `data-models.md`, `programs.md`, `modules-catalog.md`,
 `control-flow.md`, `agents-tools.md`, `knowledge-base.md`, `training-guide.md`,
-`rewards-metrics.md`, `optimizers.md` — all under `references/`.
+`rewards-metrics.md`, `optimizers.md`, `decision-models.md` — all under
+`references/`.
