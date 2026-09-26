@@ -29,14 +29,15 @@ deep-dive reference doc:
 
 | Section | What it covers |
 |---------|----------------|
-| **Core** | DataModel, Field, Input, JSON operators (`+ & \| ^ ~`), `synalinks.ops`, configuration, LanguageModel/EmbeddingModel basics |
+| **Core** | DataModel, Field, Input, JSON operators (`+ & \| ^ ~`), `synalinks.ops`, configuration, LanguageModel/EmbeddingModel basics, DecisionModel |
 | **Programs** | Program class, four building APIs (Functional / Sequential / Subclassing / Mixed), multi-input/output graphs, build/call lifecycle, save/load, `summary`, `get_module`, `plot_program`, custom serialization |
 | **Modules** | Generator, ChainOfThought, SelfCritique, Identity, PythonSynthesis, SequentialPlanSynthesis, custom modules via subclassing |
-| **Control flow** | Decision, Branch, parallel branches, self-consistency, XOR input/output guards, And/Or modules, branch merging |
+| **Control flow** | Decision, MultiDecision, Branch, parallel branches, self-consistency, XOR input/output guards, And/Or modules, branch merging |
+| **Decision models** | DecisionModel (TypeSafe jev), fields as questions, the `decision_model` argument, `min_confidence`/`threshold` abstention, tuning thresholds with KerasTuner |
 | **Agents** | FunctionCallingAgent, RLM, DeepAgent, Tool definitions, MCP integration (MultiServerMCPClient), subagents, trajectories |
 | **Knowledge** | KnowledgeBase (DuckDB), EmbedKnowledge, UpdateKnowledge, RetrieveKnowledge, RAG/KAG, hybrid search, Entity/Relation graphs |
 | **Training** | `compile()` / `fit()` / `evaluate()` / `predict()`, callbacks, ProgramCheckpoint, training workflow |
-| **Rewards** | ExactMatch, CosineSimilarity, LMAsJudge, ProgramAsJudge, F1Score, custom rewards/metrics, masking |
+| **Rewards** | ExactMatch, CosineSimilarity, LMAsJudge, ProgramAsJudge, RubricsAsJudge and its presets (Faithfulness, Toxicity, TaskCompletion, ...), AgentAsJudge, DeepAgentAsJudge, RLMAsJudge, ComposableReward, BatchReward, F1Score, custom rewards/metrics, masking |
 | **Optimizers** | RandomFewShot, OMEGA, Dominated Novelty Search, mutation/crossover, quality-diversity tuning |
 | **Providers** | Provider prefixes (openai, anthropic, groq, openrouter, cohere, deepseek, together_ai, bedrock, doubleword, hosted_vllm, ...), local OpenAI-compatible servers (LMStudio/vLLM/ollama), OpenAI-compatible setups (e.g. OpenRouter embeddings via `api_base`) |
 | **Datasets** | Built-in datasets (gsm8k, hotpotqa, arcagi), custom iterable datasets, visualization (`plot_program`, `plot_history`, `plot_metrics_*`) |

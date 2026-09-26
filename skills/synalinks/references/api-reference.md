@@ -132,9 +132,9 @@ Single-label classification for routing.
 decision = await synalinks.Decision(
     question="What type of query is this?",
     labels=["factual", "opinion", "creative"],
-    language_model=lm,
+    language_model=lm,        # or decision_model=dm (+ min_confidence=...)
 )(inputs)
-# Returns data model with "label" field
+# Returns {"thinking", "choice"}; with a decision model only {"choice"}
 ```
 
 ### synalinks.Branch
@@ -285,14 +285,43 @@ em = synalinks.EmbeddingModel(
 )
 ```
 
+### synalinks.DecisionModel
+
+Decision model wrapper (e.g. TypeSafe's `jev`): answers typed questions
+(yes/no, choice, score) with calibrated probabilities; never generates text.
+Subclasses `Module`. Keyword-only. API key from `TYPESAFE_API_KEY`.
+**Never pass it as `language_model`** (raises): modules that support it take
+`decision_model=` (`Generator`, `Decision`, `MultiDecision`, `Branch`,
+`SelfCritique`, `RubricsAsJudge`). See `decision-models.md`.
+
+```python
+dm = synalinks.DecisionModel(
+    model="typesafe/jev-latest",
+    api_base=None,       # or TYPESAFE_BASE_URL
+    timeout=30.0,
+    retry=5,
+    retry_max_wait=60,
+    fallback=None,       # another DecisionModel
+    cache_dir=None,      # on-disk response cache
+    cost_per_token=None, # override the built-in price (input tokens only)
+)
+dm.check_schema(Triage.get_schema())  # raises UnsupportedSchemaError if unanswerable
+```
+
 ### Default models
 
 ```python
 synalinks.set_default_language_model("openai/gpt-4o-mini")
 synalinks.set_default_embedding_model("openai/text-embedding-3-small")
+synalinks.set_default_decision_model("typesafe/jev-latest")
 synalinks.default_language_model()    # cached LanguageModel instance
 synalinks.default_embedding_model()   # cached EmbeddingModel instance
+synalinks.default_decision_model()    # cached DecisionModel instance (or None)
 ```
+
+Modules accepting a `decision_model` use the default decision model instead of
+the default language model (unless given another `language_model`), wherever
+it can answer the schema.
 
 String identifiers persist to `~/.synalinks/synalinks.json`. Instances and
 dict configs set the cached default for the current process only.

@@ -80,6 +80,20 @@ inputs manually with `inputs & decision` if you need both.
 All module constructors are keyword-only (`*` after `self`) — pass every
 argument by name.
 
+**With a decision model** (see `decision-models.md`), pass
+`decision_model=` (never as `language_model`): the question is asked as is,
+the output is only `{"choice"}` (no `thinking`), and `min_confidence` makes it
+abstain (return `None`) when the model is not sure enough:
+
+```python
+x = await synalinks.Decision(
+    question="Which team should handle the ticket?",
+    labels=["billing", "technical", "sales"],
+    decision_model=synalinks.DecisionModel(model="typesafe/jev-latest"),
+    min_confidence=0.7,   # optional; None -> always decide
+)(inputs)
+```
+
 ## MultiDecision
 
 `synalinks.MultiDecision` mirrors `Decision` but allows **multiple**
@@ -97,6 +111,9 @@ x = await synalinks.MultiDecision(
 
 Extra arg: `inline` (bool, default `True`) — places the enum directly in
 the array items (no `$defs`/`$ref` indirection) for simpler schemas.
+With `decision_model=`, each label is one yes/no question, the output is only
+`{"choices"}` (may be empty), and `threshold` (default `0.5`) is the probability
+from which a label is kept.
 Use `MultiDecision` as `Branch`'s `decision_type` for multi-label routing
 (see below).
 
@@ -127,6 +144,11 @@ Returns a tuple of length `len(labels)`. With `return_decision=True` the
 decision is concatenated *into* each selected branch's output (tuple
 length is unchanged); with `inject_decision=True` each branch sees
 `inputs + decision` rather than `inputs`. Both default to `True`.
+
+With `decision_model=` the routing decision is made by a decision model
+(cheap, fast, on every input) while the branches keep their own models.
+`min_confidence` (with `Decision`) / `threshold` (with `MultiDecision`) are
+forwarded; when the decision is not taken, **no branch runs** (all `None`).
 
 ### Branch Output Patterns
 
