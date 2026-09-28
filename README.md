@@ -1,5 +1,7 @@
 # Agent Skills for Synalinks
 
+[![CI](https://github.com/SynaLinks/synalinks-skills/actions/workflows/ci.yml/badge.svg)](https://github.com/SynaLinks/synalinks-skills/actions/workflows/ci.yml)
+
 ---
 
 This repository contains skills for coding agents that read the open Agent
@@ -207,6 +209,13 @@ See the [LICENSE](LICENSE) file for full details.
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+Every push and pull request runs the [CI workflow](.github/workflows/ci.yml),
+which validates each `skills/*/SKILL.md` against the Agent Skills spec and
+installs the skills into every agent the `skills` CLI supports, so a broken
+frontmatter or a missing file is caught before it reaches users. On `main` it
+also re-installs from GitHub (the exact command users run) and uploads the
+`.skill` archives as a workflow artifact.
 
 ## Acknoledgement
 
