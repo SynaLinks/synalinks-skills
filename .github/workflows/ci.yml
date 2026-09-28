@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly: catches upstream changes in the `skills` CLI or the spec.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate SKILL.md (agentskills spec)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Validate every skill folder
+        run: |
+          set -euo pipefail
+          for skill in skills/*/; do
+            uvx --from skills-ref agentskills validate "$skill"
+          done
+
+  install:
+    name: Install for all agents (skills CLI, local checkout)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: repo
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install every skill into every supported agent
+        run: |
+          set -euo pipefail
+          mkdir project && cd project
+          npx -y skills@latest add "$GITHUB_WORKSPACE/repo" \
+            --skill '*' --agent '*' --yes --copy --json > result.json
+          cat result.json
+      - name: Check every skill installed into every agent
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, pathlib, sys
+          results = json.load(open("project/result.json"))
+          expected = sorted(p.parent.name for p in pathlib.Path("repo/skills").glob("*/SKILL.md"))
+          installed = sorted(r.get("name") for r in results if r.get("status") == "installed")
+          failed = [r for r in results if r.get("status") != "installed"]
+          if failed or installed != expected:
+              print("expected:", expected, "\ninstalled:", installed, "\nfailed:", failed)
+              sys.exit(1)
+          for r in results:
+              print(f"{r['name']}: installed into {len(r['agents'])} agents")
+          for name in expected:
+              # Claude Code has its own dir; Codex, OpenCode, Cursor, ... read .agents.
+              for agent_dir in (".claude", ".agents"):
+                  path = pathlib.Path("project") / agent_dir / "skills" / name / "SKILL.md"
+                  assert path.is_file(), f"missing {path}"
+          PY
+
+  install-from-github:
+    # What users actually run: install from the published repo, not the checkout.
+    name: Install for all agents (skills CLI, GitHub source)
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install from SynaLinks/synalinks-skills
+        run: |
+          set -euo pipefail
+          mkdir project && cd project
+          npx -y skills@latest add SynaLinks/synalinks-skills \
+            --skill '*' --agent '*' --yes --json > result.json
+          cat result.json
+          python3 -c '
+          import json, sys
+          results = json.load(open("result.json"))
+          failed = [r for r in results if r.get("status") != "installed"]
+          if failed or not results:
+              print("failed:", failed); sys.exit(1)
+          '
+
+  package:
+    # The `.skill` archive that Claude.ai / Claude Desktop uploads expect.
+    name: Package .skill archives
+    needs: [validate, install]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Zip every skill folder
+        run: |
+          set -euo pipefail
+          mkdir dist
+          for skill in skills/*/; do
+            name=$(basename "$skill")
+            (cd skills && zip -qr "../dist/$name.skill" "$name")
+          done
+          ls -l dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: skill-archives
+          path: dist/*.skill
