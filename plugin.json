@@ -1,0 +1,6 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "synalinks",
+  "description": "Teaches coding agents idiomatic Synalinks (Keras-inspired neuro-symbolic LM framework).",
+  "author": { "name": "SynaLinks" }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "synalinks-skills",
+  "owner": { "name": "SynaLinks" },
+  "description": "Synalinks skills for coding agents",
+  "plugins": [
+    { "name": "synalinks", "source": "./", "description": "Idiomatic Synalinks for coding agents" }
+  ]
+}

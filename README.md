@@ -117,6 +117,24 @@ goose, junie and roo, among others.
 The skill content is identical in every case: one `SKILL.md`, no per-agent
 variants to maintain.
 
+### As a plugin
+
+This repo is also a plugin marketplace for Claude Code and Codex.
+
+Claude Code (2.1.275 or later):
+
+```shell
+/plugin install synalinks --marketplace SynaLinks/synalinks-skills
+```
+
+Codex:
+
+```shell
+codex plugin marketplace add SynaLinks/synalinks-skills
+```
+
+Then run `codex`, open `/plugins`, install `synalinks`, and start a new session.
+
 ### Verify
 
 ```shell
