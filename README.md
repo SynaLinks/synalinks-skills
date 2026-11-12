@@ -131,9 +131,10 @@ Codex:
 
 ```shell
 codex plugin marketplace add SynaLinks/synalinks-skills
+codex plugin add synalinks@synalinks-skills
 ```
 
-Then run `codex`, open `/plugins`, install `synalinks`, and start a new session.
+Start a new Codex session to load it.
 
 ### Verify
 
