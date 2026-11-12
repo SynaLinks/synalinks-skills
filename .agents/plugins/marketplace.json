@@ -1,0 +1,6 @@
+{
+  "name": "synalinks-skills",
+  "plugins": [
+    { "name": "synalinks", "source": { "source": "local", "path": "./" }, "policy": { "installation": "AVAILABLE" } }
+  ]
+}
