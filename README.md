@@ -119,7 +119,8 @@ variants to maintain.
 
 ### As a plugin
 
-This repo is also a plugin marketplace for Claude Code and Codex.
+This repo is also a plugin marketplace for Claude Code and Codex, and an
+OpenCode plugin.
 
 Claude Code (2.1.275 or later):
 
@@ -135,6 +136,27 @@ codex plugin add synalinks@synalinks-skills
 ```
 
 Start a new Codex session to load it.
+
+OpenCode:
+
+```shell
+opencode plugin github:SynaLinks/synalinks-skills          # this project
+opencode plugin github:SynaLinks/synalinks-skills --global # every project
+```
+
+This adds the plugin to `.opencode/opencode.json` (or your global config). You
+can also list it yourself:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": ["github:SynaLinks/synalinks-skills"]
+}
+```
+
+The plugin registers the repo's `skills/` directory as a skill source, so
+OpenCode discovers the skill without copying files. Restart OpenCode to load it,
+then check with `opencode debug skill`.
 
 ### Verify
 

@@ -1,6 +1,7 @@
 documentation/
 *.html
 *.json
+!package.json
 local_cache/
 *.zip
 htmlcov/
