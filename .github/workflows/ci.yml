@@ -85,6 +85,33 @@ jobs:
               print("failed:", failed); sys.exit(1)
           '
 
+  opencode-plugin:
+    name: Load as an OpenCode plugin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: repo
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install the plugin from the checkout and list skills
+        run: |
+          set -euo pipefail
+          npm i -g opencode-ai@latest
+          mkdir project && cd project
+          opencode plugin "git+file://$GITHUB_WORKSPACE/repo#$(git -C "$GITHUB_WORKSPACE/repo" rev-parse HEAD)"
+          opencode debug skill > skills.json
+          python3 - <<'PY'
+          import json, pathlib, sys
+          found = {s["name"] for s in json.load(open("skills.json"))}
+          expected = {p.parent.name for p in pathlib.Path("../repo/skills").glob("*/SKILL.md")}
+          missing = expected - found
+          if missing:
+              print("missing:", sorted(missing), "\nfound:", sorted(found)); sys.exit(1)
+          print("loaded:", sorted(expected))
+          PY
+
   package:
     # The `.skill` archive that Claude.ai / Claude Desktop uploads expect.
     name: Package .skill archives

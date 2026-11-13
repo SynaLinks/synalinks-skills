@@ -7,6 +7,30 @@
 This repository contains skills for coding agents that read the open Agent
 Skills format (`SKILL.md`): Claude Code, Codex, OpenCode, pi, and others.
 
+## Quick install
+
+Install it as a plugin in one command:
+
+```shell
+# Claude Code (2.1.275 or later)
+/plugin install synalinks --marketplace SynaLinks/synalinks-skills
+
+# Codex
+codex plugin marketplace add SynaLinks/synalinks-skills
+codex plugin add synalinks@synalinks-skills
+
+# OpenCode
+opencode plugin github:SynaLinks/synalinks-skills
+```
+
+Any other agent (Cursor, Gemini CLI, Copilot, pi, ...):
+
+```shell
+npx skills add SynaLinks/synalinks-skills --skill synalinks
+```
+
+Details, global installs and Claude.ai uploads are in [Install](#install).
+
 ## What are Agent Skills?
 
 Agent Skills are reusable instructions, in a plain `SKILL.md` file, that teach a
@@ -51,18 +75,67 @@ The skill folder contains:
 
 ## Install
 
-The recommended way to install this skill is the official
-[`skills`](https://skills.sh) CLI (`npx skills`). It clones this repo, discovers
-the `synalinks` skill, and wires it into your agent's skills directory: no manual
-cloning, copying, or zipping required. It needs Node.js (the `npx` that ships
-with it); nothing else.
+Pick the route that matches your agent:
 
-The CLI detects the agents installed on your machine, so the same command works
-whether you use Claude Code, Codex, OpenCode, pi, or another supported agent.
-The examples below use Claude Code; see [Other agents](#other-agents) to target
-a specific one.
+| Agent | Install with |
+| --- | --- |
+| Claude Code, Codex, OpenCode | [the plugin](#as-a-plugin) (recommended) |
+| Any other agent (Cursor, Gemini CLI, Copilot, pi, ...) | [`npx skills`](#with-npx-skills) |
+| Claude.ai (web) and Claude Desktop | [a `.skill` upload](#claudeai-web-and-claude-desktop) |
 
-### Quick start
+The skill content is identical in every case: one `SKILL.md`, no per-agent
+variants to maintain.
+
+### As a plugin
+
+This repo is a plugin marketplace for Claude Code and Codex, and an OpenCode
+plugin. The agent fetches the skill itself: no Node.js, no copied files.
+
+**Claude Code** (2.1.275 or later):
+
+```shell
+/plugin install synalinks --marketplace SynaLinks/synalinks-skills
+```
+
+Then run `/skills`: `synalinks` should appear.
+
+**Codex:**
+
+```shell
+codex plugin marketplace add SynaLinks/synalinks-skills
+codex plugin add synalinks@synalinks-skills
+```
+
+Start a new Codex session to load it.
+
+**OpenCode:**
+
+```shell
+opencode plugin github:SynaLinks/synalinks-skills           # this project
+opencode plugin github:SynaLinks/synalinks-skills --global  # every project
+```
+
+This adds the plugin to `.opencode/opencode.json` (or your global config). You
+can also list it yourself:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": ["github:SynaLinks/synalinks-skills"]
+}
+```
+
+The plugin registers the repo's `skills/` directory as a skill source, so
+OpenCode discovers the skill without copying files. Restart OpenCode to load it,
+then check with `opencode debug skill`.
+
+### With `npx skills`
+
+For any other agent, use the official [`skills`](https://skills.sh) CLI
+(`npx skills`). It clones this repo, discovers the `synalinks` skill, and wires
+it into your agent's skills directory: no manual cloning, copying, or zipping
+required. It needs Node.js (the `npx` that ships with it); nothing else. It also
+works for Claude Code, Codex and OpenCode if you prefer it to the plugin.
 
 `synalinks` is a skill for the **synalinks Python library**, so the natural place
 to install it is **the project where you use synalinks**, so the agent
@@ -73,10 +146,11 @@ scope is also the CLI default, so just run this from your project root:
 npx skills add SynaLinks/synalinks-skills --skill synalinks
 ```
 
-This installs into the current project (each agent reads it from its own
-directory, e.g. `<repo>/.claude/skills/` for Claude Code). Commit the generated
-`skills-lock.json` (see
-[Updating](#updating)) so teammates and CI resolve the same skill content.
+The CLI detects the agents installed on your machine and installs into the
+current project (each agent reads it from its own directory, e.g.
+`<repo>/.cursor/skills/` or `<repo>/.agents/skills/`). Commit the generated
+`skills-lock.json` (see [Updating](#updating)) so teammates and CI resolve the
+same skill content.
 
 Want it in **every** project instead of per-project? Install globally:
 
@@ -84,9 +158,21 @@ Want it in **every** project instead of per-project? Install globally:
 npx skills add SynaLinks/synalinks-skills --skill synalinks --global
 ```
 
-That installs to the agent's user-level skills directory (`~/.claude/skills/`
-for Claude Code). By default the CLI symlinks the skill; pass `--copy` to copy
-the files instead.
+That installs to the agent's user-level skills directory. By default the CLI
+symlinks the skill; pass `--copy` to copy the files instead.
+
+Target one agent (or all) explicitly with `-a`/`--agent`:
+
+```shell
+npx skills add SynaLinks/synalinks-skills --skill synalinks -a cursor        # Cursor
+npx skills add SynaLinks/synalinks-skills --skill synalinks -a gemini-cli    # Gemini CLI
+npx skills add SynaLinks/synalinks-skills --skill synalinks -a pi            # pi
+npx skills add SynaLinks/synalinks-skills --all                              # everything, all agents
+```
+
+The CLI supports 70+ agents. Passing an unknown name prints the full list of
+valid agent slugs, which currently includes claude-code, codex, opencode,
+github-copilot, windsurf, zed, crush, goose, junie and roo, among others.
 
 List what's in the repo without installing anything:
 
@@ -95,56 +181,10 @@ npx skills add SynaLinks/synalinks-skills --list
 ```
 
 Run `npx skills add SynaLinks/synalinks-skills` with no flags for an
-interactive picker.
+interactive picker, and `npx skills list` to see what is installed.
 
-### Other agents
-
-The `skills` CLI supports 70+ agents. Target one (or all) explicitly with
-`-a`/`--agent`:
-
-```shell
-npx skills add SynaLinks/synalinks-skills --skill synalinks -a claude-code   # Claude Code
-npx skills add SynaLinks/synalinks-skills --skill synalinks -a codex         # Codex
-npx skills add SynaLinks/synalinks-skills --skill synalinks -a opencode      # OpenCode
-npx skills add SynaLinks/synalinks-skills --skill synalinks -a pi            # pi
-npx skills add SynaLinks/synalinks-skills --all                              # everything, all agents
-```
-
-Passing an unknown name prints the full list of valid agent slugs, which
-currently includes cursor, gemini-cli, github-copilot, windsurf, zed, crush,
-goose, junie and roo, among others.
-
-The skill content is identical in every case: one `SKILL.md`, no per-agent
-variants to maintain.
-
-### As a plugin
-
-This repo is also a plugin marketplace for Claude Code and Codex.
-
-Claude Code (2.1.275 or later):
-
-```shell
-/plugin install synalinks --marketplace SynaLinks/synalinks-skills
-```
-
-Codex:
-
-```shell
-codex plugin marketplace add SynaLinks/synalinks-skills
-codex plugin add synalinks@synalinks-skills
-```
-
-Start a new Codex session to load it.
-
-### Verify
-
-```shell
-npx skills list            # list installed skills
-```
-
-In Claude Code you can also run the `/skills` slash command; the `synalinks`
-skill should appear. Agents auto-activate it for your task based on the
-`SKILL.md` `description` field, so there is nothing to select manually.
+Agents auto-activate the skill for your task based on the `SKILL.md`
+`description` field, so there is nothing to select manually.
 
 ### Claude.ai (web) and Claude Desktop
 

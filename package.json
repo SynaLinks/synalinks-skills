@@ -1,0 +1,10 @@
+{
+  "name": "synalinks-skills",
+  "version": "1.0.0",
+  "description": "Synalinks skills for coding agents, packaged as an OpenCode plugin.",
+  "type": "module",
+  "main": "opencode/index.js",
+  "files": ["opencode/", "skills/"],
+  "repository": "github:SynaLinks/synalinks-skills",
+  "license": "Apache-2.0"
+}
