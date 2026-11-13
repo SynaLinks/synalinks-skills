@@ -7,6 +7,30 @@
 This repository contains skills for coding agents that read the open Agent
 Skills format (`SKILL.md`): Claude Code, Codex, OpenCode, pi, and others.
 
+## Quick install
+
+Install it as a plugin in one command:
+
+```shell
+# Claude Code (2.1.275 or later)
+/plugin install synalinks --marketplace SynaLinks/synalinks-skills
+
+# Codex
+codex plugin marketplace add SynaLinks/synalinks-skills
+codex plugin add synalinks@synalinks-skills
+
+# OpenCode
+opencode plugin github:SynaLinks/synalinks-skills
+```
+
+Any other agent (Cursor, Gemini CLI, Copilot, pi, ...):
+
+```shell
+npx skills add SynaLinks/synalinks-skills --skill synalinks
+```
+
+Details, global installs and Claude.ai uploads are in [Install](#install).
+
 ## What are Agent Skills?
 
 Agent Skills are reusable instructions, in a plain `SKILL.md` file, that teach a
