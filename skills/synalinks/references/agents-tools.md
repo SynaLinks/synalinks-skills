@@ -145,7 +145,7 @@ synalinks.FunctionCallingAgent(
     return_inputs_with_trajectory=True, # Include full execution trajectory
     prompt_template=None,              # Custom prompt template
     instructions="",                   # Instructions string (NOT a list)
-    final_instructions=None,           # Optional: overrides instructions for the final generator
+    final_instructions=None,           # Optional: instructions of the fallback answer (see below)
     temperature=0.0,
     use_chain_of_thought=False,
     reasoning_effort=None,
@@ -156,6 +156,25 @@ synalinks.FunctionCallingAgent(
 All arguments are **keyword-only** (note the `*,` after `self` in the source).
 `language_model` may be omitted if `synalinks.set_default_language_model(...)`
 was called — `ops.predict` resolves the default at call time.
+
+### How the answer is given
+
+As in LangChain's agents, each step is one LM call in which the model either
+calls tools or answers:
+
+- **No `schema`/`data_model`**: a reply without tool calls *is* the answer.
+  It is not asked for again.
+- **With a `schema`/`data_model`**: the schema becomes a `final_answer` tool
+  (named `final_answer_` if a tool of yours already has that name), sent with
+  `tool_choice="required"`. The model's call to it is the structured answer.
+  Arguments that do not fit the schema go back to the model as that call's
+  error, and the loop goes on.
+- **Fallback**: the final generator (`final_instructions`) writes the answer
+  only when the steps give none: an empty reply, a schema answered in prose,
+  or `max_iterations` spent.
+- **`streaming=True`**: the step that answers comes back as a
+  `StreamingIterator`, once it is written (a step is read whole first: a model
+  may write a few words, then call a tool, in the same reply).
 
 ### Execution Trajectory
 
@@ -180,11 +199,26 @@ a `tool` message referencing the call's `tool_call_id`.
         }
       ]
     },
-    {"role": "tool", "tool_call_id": "call_1", "content": {"result": 105, "log": "Success"}}
+    {"role": "tool", "tool_call_id": "call_1", "content": {"result": 105, "log": "Success"}},
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call_2",
+          "type": "function",
+          "function": {"name": "final_answer", "arguments": {"answer": "105"}}
+        }
+      ]
+    },
+    {"role": "tool", "tool_call_id": "call_2", "content": "Answer accepted."}
   ],
   "answer": "105"
 }
 ```
+
+The structured answer is the `final_answer` call's arguments: it also appears in
+the trajectory, with its `tool` result.
 
 With no `schema`/`data_model`, the agent returns the `ChatMessages` trajectory
 directly; the final answer is the last `assistant` message
